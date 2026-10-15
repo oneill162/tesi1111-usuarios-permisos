@@ -1,0 +1,1202 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TESI 1111 · Usuarios y Permisos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#010805;--g:#00ff66;--gd:#2fb561;--gx:#07391b;--am:#ffb000;--rd:#ff3355;--cy:#00e5ff;--tx:#c8ffd9;
+ --f:'JetBrains Mono','Fira Code',Consolas,'Courier New',monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--f)}
+#rain{position:fixed;inset:0;opacity:.14}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+ background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:49;
+ background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.75))}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform-origin:center;z-index:2}
+.slide{position:absolute;inset:0;padding:62px 70px 54px;display:none;flex-direction:column}
+.slide.active{display:flex;animation:enter .6s cubic-bezier(.2,.9,.2,1)}
+@keyframes enter{0%{opacity:0;transform:translateX(40px) skewX(-6deg);filter:blur(8px) hue-rotate(60deg)}
+ 35%{opacity:1;transform:translateX(-6px) skewX(2deg);filter:blur(0) hue-rotate(0)}
+ 50%{transform:translateX(5px)}100%{transform:none}}
+.rv{opacity:0;transform:translateY(16px)}
+.active .rv{animation:rise .55s cubic-bezier(.2,.8,.2,1) var(--d,0ms) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+/* HUD */
+#hud{position:absolute;left:0;right:0;top:0;height:40px;padding:0 70px;display:flex;align-items:center;gap:18px;
+ font-size:13px;color:var(--gd);border-bottom:1px solid var(--gx);z-index:5}
+#hud b{color:var(--g);font-weight:600}#hud .sp{flex:1}
+#bar{position:absolute;left:0;bottom:0;height:3px;background:var(--g);transition:width .4s}
+#foot{position:absolute;left:70px;right:70px;bottom:14px;display:flex;gap:16px;font-size:13px;color:var(--gd);z-index:5;align-items:center}
+#foot .sp{flex:1}
+button,.btn{font:inherit;color:var(--g);background:transparent;border:1px solid var(--gd);padding:3px 10px;cursor:pointer;font-size:13px;letter-spacing:.5px}
+button:hover{background:var(--g);color:#000;}
+/* type */
+h1{font-size:54px;line-height:1.1;color:var(--g);font-weight:800}
+h2{font-size:38px;color:var(--g);margin-bottom:26px;font-weight:800}
+h2::before{content:"$ ";color:var(--gd)}
+.cur::after{content:"█";margin-left:4px;animation:blink 1s steps(1) infinite;color:var(--g)}
+@keyframes blink{50%{opacity:0}}
+h3{font-size:19px;color:var(--g);margin-bottom:6px;font-weight:600}
+p,.d{font-size:16px;line-height:1.45;color:#9fd8b3}
+.dim{color:var(--gd)}.am{color:var(--am)}.rd{color:var(--rd)}.cy{color:var(--cy)}
+/* layout */
+.grid{display:grid;gap:18px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}.g5{grid-template-columns:repeat(5,1fr)}.g6{grid-template-columns:repeat(6,1fr)}
+.card{position:relative;border:1px solid var(--gx);background:rgba(2,18,10,.86);padding:16px 18px}
+.card::before,.card::after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--g);opacity:.85}
+.card::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+.card::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+.card.w{border-color:#5a3b00;background:rgba(255,176,0,.06)}.card.w::before,.card.w::after{border-color:var(--am)}
+.card.w h3{color:var(--am)}
+.card.r{border-color:#5a0f1d;background:rgba(255,51,85,.06)}.card.r::before,.card.r::after{border-color:var(--rd)}
+.card.r h3{color:var(--rd)}
+.card.c{border-color:#06475a;background:rgba(0,229,255,.05)}.card.c::before,.card.c::after{border-color:var(--cy)}
+.card.c h3{color:var(--cy)}
+.n{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid var(--g);color:var(--g);font-weight:800;margin-bottom:10px;font-size:17px}
+.big{font-size:26px;font-weight:800;color:var(--g)}
+/* commands */
+.cl{margin-bottom:12px}
+.cmd{display:block;font-size:19px;color:var(--g);background:#031f10;border:1px solid var(--gx);padding:6px 12px;cursor:pointer;
+ transition:.2s;white-space:pre-wrap;overflow-wrap:anywhere}
+.cmd::before{content:"$ ";color:var(--gd)}
+.cmd.np::before{content:""}
+.cmd:hover{background:#04321a;border-color:var(--g);transform:translateX(4px)}
+.cl .d{padding:3px 0 0 15px;color:#78b68e}
+.term{background:#010d06;border:1px solid var(--gd);padding:14px 18px;font-size:19px;color:var(--g)}
+.hl{color:#000;background:var(--g);padding:0 4px}
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:17px}
+th{color:#000;background:var(--g);text-align:left;padding:10px 14px}
+td{border:1px solid var(--gx);padding:10px 14px;color:#b6ecc8}
+td:first-child{color:var(--g);font-weight:600}
+tr{background:rgba(0,255,102,.03)}
+/* misc */
+.chain{display:flex;align-items:stretch;gap:0}
+.chain .card{flex:1;text-align:center;padding:14px 8px}
+.chain .ar{align-self:center;color:var(--g);font-size:26px;padding:0 6px}
+.sec{align-items:center;justify-content:center;text-align:center}
+.sec .big1{font-size:200px;line-height:1;font-weight:800;color:transparent;-webkit-text-stroke:2px var(--g);
+ animation:flick 3s infinite}
+@keyframes flick{0%,92%,100%{opacity:1}94%{opacity:.4}96%{opacity:1}98%{opacity:.6}}
+.glitch{position:relative}
+.glitch::before,.glitch::after{content:attr(data-t);position:absolute;left:0;top:0;width:100%;overflow:hidden}
+.glitch::before{color:var(--cy);animation:g1 3s infinite steps(1);clip-path:inset(0 0 60% 0)}
+.glitch::after{color:var(--rd);animation:g2 3.3s infinite steps(1);clip-path:inset(60% 0 0 0)}
+@keyframes g1{0%,90%{transform:none;opacity:0}91%{transform:translate(-4px,0);opacity:.8}94%{transform:translate(3px,0);opacity:.8}96%,100%{opacity:0}}
+@keyframes g2{0%,85%{transform:none;opacity:0}86%{transform:translate(4px,0);opacity:.8}89%{transform:translate(-3px,0);opacity:.8}91%,100%{opacity:0}}
+.oct{display:flex;gap:10px;align-items:center}
+.tg{width:58px;height:58px;font-size:22px;font-weight:800}
+.tg.on{background:var(--g);color:#000;}
+.fld{text-align:center;border:1px solid var(--gd);padding:12px 4px;background:#021a0c}
+.fld b{display:block;font-size:24px;color:var(--g)}.fld span{font-size:13px;color:var(--gd)}
+.chip{display:block;border:1px solid var(--gd);padding:10px;margin-bottom:10px;text-align:center;color:var(--g);background:#021a0c}
+/* extra panel */
+.extra{position:absolute;right:70px;bottom:46px;width:420px;border:1px solid var(--cy);background:rgba(0,20,26,.96);
+ padding:14px 16px;z-index:20;font-size:14px;color:#bff;display:none;box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.extra h3{color:var(--cy)}.extra.show{display:block;animation:rise .3s}
+#xbtn{border-color:var(--cy);color:var(--cy)}#xbtn:hover{background:var(--cy);color:#000}
+/* terminal overlay */
+#lab{position:fixed;inset:3vh 3vw;z-index:100;display:none;background:#000d05;border:1px solid var(--g);
+ box-shadow:0 20px 60px rgba(0,0,0,.7);flex-direction:column}
+#lab.show{display:flex;animation:rise .35s}
+#lab .tb{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--gd);color:var(--gd);font-size:13px}
+#lab .tb b{color:var(--g)}#lab .tb .sp{flex:1}
+#lab .bd{flex:1;display:flex;min-height:0}
+#tout{flex:1;overflow-y:auto;padding:14px 18px;font-size:16px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;cursor:text}
+#tout .e{color:#ff6b84}.c-d{color:#5cb8ff;font-weight:600}.c-x{color:var(--g);font-weight:600}.pr{color:var(--g)}.pr i{color:var(--cy);font-style:normal}
+#tin{display:flex}
+#tin input{flex:1;background:transparent;border:0;outline:0;color:#fff;font:inherit;caret-color:var(--g);margin-left:6px}
+#side{width:310px;border-left:1px solid var(--gd);padding:14px;overflow-y:auto;font-size:14px}
+#side h3{font-size:15px;margin-bottom:10px}
+.ms{display:flex;gap:8px;padding:7px 0;border-bottom:1px dashed var(--gx);color:#9fd8b3}
+.ms i{font-style:normal;color:var(--gd)}.ms.ok{color:var(--g)}.ms.ok i{color:var(--g)}
+#pbar{height:6px;background:var(--gx);margin:8px 0 12px}#pbar div{height:100%;background:var(--g);width:0;transition:.4s}
+@media(max-width:900px){#side{display:none}}
+#lab.win{--g:#4fc3ff;--gd:#1f7099;--gx:#0b2c44;--tx:#d6efff;background:#00101c;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+#lab.win .c-d{color:#ffd54f}#lab.win .c-x{color:#8affc1}
+.tab.on{background:var(--g);color:#000}.stabs{display:flex;gap:6px;margin-bottom:12px}.stabs .tab{flex:1}
+.rf{border-bottom:1px dashed var(--gx);padding:7px 0}.rf>b{color:var(--g);cursor:pointer}.rf>b:hover{text-decoration:underline}
+.rf .p{color:#9fd8b3;font-size:13px}.rf .x{display:none;margin-top:6px;font-size:13.5px}
+.rf.open .x{display:block}.rf .x code{display:block;color:var(--g);background:#031f10;border:1px solid var(--gx);padding:3px 8px;margin:4px 0;cursor:pointer}
+.rf .x pre{color:#78b68e;white-space:pre-wrap;font:inherit;margin-top:2px}
+
+/* pulido: foco, selección, scroll, movimiento reducido, adaptable */
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--cy);outline-offset:3px}
+::selection{background:var(--g);color:#000}
+*{scrollbar-width:thin;scrollbar-color:var(--gd) transparent}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--gd)}::-webkit-scrollbar-track{background:transparent}
+table,.big,.fld b,#coct{font-variant-numeric:tabular-nums}
+input{caret-color:var(--g)}
+@media(max-width:900px){#lab{inset:0}#lab .bd{flex-direction:column}#side{display:block;width:100%;max-height:34%;border-left:0;border-top:1px solid var(--gd)}}
+@media(pointer:coarse){button,.btn{min-height:44px;padding:6px 14px}.tg{width:64px;height:64px}}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{animation:none!important;transition:none!important}
+ .rv{opacity:1;transform:none}#rain{display:none}
+}
+</style>
+</head>
+<body>
+<canvas id="rain"></canvas>
+<div id="stage">
+<div id="hud"><b>root@tesi1111</b><span id="path"></span><span class="sp"></span><span id="ctr"></span></div>
+
+<!-- 1 -->
+<section class="slide" data-sec="inicio">
+ <div style="margin:auto 0">
+  <p class="rv dim" style="font-size:18px">$ ./unidad3b.sh --tema="usuarios-y-permisos"</p>
+  <p class="rv am" style="font-size:20px;margin:22px 0 10px">TESI 1111 · Unidad 3 · Inciso B</p>
+  <h1 class="rv glitch" data-t="Gestión de Usuarios y Permisos" style="font-size:62px">Gestión de Usuarios y Permisos</h1>
+  <p class="rv" style="font-size:22px;margin:22px 0 40px;color:var(--g)">Cuentas de usuario · Permisos y roles · Seguridad de las cuentas</p>
+  <div class="rv card" style="display:inline-block">
+   <p>Prof. Eduardo O. De Jesús Arroyo · Instituto Tecnológico de Puerto Rico, Recinto de Manatí</p>
+   <p class="dim">Jueves, 15 de octubre de 2026</p>
+  </div>
+  <p class="rv dim" style="margin-top:26px">[ → ] avanzar &nbsp; [ T ] abrir laboratorio de terminal</p>
+ </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-sec="agenda">
+ <h2 class="ty">Agenda de hoy</h2>
+ <div class="grid" style="grid-template-columns:1.5fr 1fr;gap:30px">
+  <div>
+   <div class="card rv" style="margin-bottom:12px"><span class="big">01</span> <b class="cy">Para empezar</b><p>Una pregunta sobre tu propia casa</p></div>
+   <div class="card rv" style="margin-bottom:12px"><span class="big">02</span> <b class="cy">Cuentas de usuario</b><p>Qué son, dónde viven y cómo se administran</p></div>
+   <div class="card rv" style="margin-bottom:12px"><span class="big">03</span> <b class="cy">Permisos y roles</b><p>rwx, notación octal, NTFS y grupos</p></div>
+   <div class="card rv" style="margin-bottom:12px"><span class="big">04</span> <b class="cy">Seguridad de las cuentas</b><p>Menor privilegio, contraseñas y MFA</p></div>
+   <div class="card rv"><span class="big">05</span> <b class="cy">Caso, práctica y repaso</b><p>Aplicar lo aprendido</p></div>
+  </div>
+  <div class="card w rv" style="align-self:start">
+   <h3>Prontuario</h3>
+   <p class="am" style="margin-bottom:14px">Unidad 3, inciso B</p>
+   <p style="margin-bottom:10px">› Creación y administración de cuentas de usuario</p>
+   <p style="margin-bottom:10px">› Configuración de permisos y roles</p>
+   <p>› Seguridad de cuentas de usuario</p>
+  </div>
+ </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-sec="objetivos">
+ <h2 class="ty">Al terminar la clase podrás</h2>
+ <div class="grid g3" style="margin-top:20px">
+  <div class="card rv"><div class="n">1</div><h3>Crear y administrar</h3><p style="font-size:20px">cuentas de usuario y grupos en Linux y en Windows.</p></div>
+  <div class="card rv"><div class="n">2</div><h3>Configurar</h3><p style="font-size:20px">permisos de archivos y carpetas, y asignar roles mediante grupos.</p></div>
+  <div class="card rv"><div class="n">3</div><h3>Aplicar</h3><p style="font-size:20px">prácticas de seguridad para proteger las cuentas de usuario.</p></div>
+ </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-sec="para-empezar">
+ <h2 class="ty">Para empezar: ¿quién usa tu computadora?</h2>
+ <div class="card rv" style="font-size:22px;margin-bottom:26px"><p style="font-size:22px;color:var(--g)">En tu casa, ¿cuántas personas usan la misma computadora? ¿Cada una tiene su propia cuenta, o todos entran con la misma?</p></div>
+ <div class="grid g3">
+  <div class="card w rv"><div class="big am">?</div><h3>¿Quién borró ese archivo?</h3><p>Con una cuenta compartida, no hay forma de saberlo.</p></div>
+  <div class="card w rv"><div class="big am">?</div><h3>¿Quién instaló ese programa?</h3><p>Si la cuenta es de administrador, cualquiera puede.</p></div>
+  <div class="card w rv"><div class="big am">?</div><h3>¿Quién ve mis documentos?</h3><p>Todos los que conocen la contraseña.</p></div>
+ </div>
+ <p style="margin-top:28px;color:var(--g)" class="rv">Esto es lo que resuelven las cuentas de usuario y los permisos.</p>
+</section>
+
+<!-- 5 -->
+<section class="slide sec" data-sec="01-cuentas">
+ <div class="big1 rv">1</div>
+ <h1 class="rv ty">Cuentas de usuario</h1>
+ <p class="rv" style="font-size:22px;margin-top:14px">Qué son, dónde viven y cómo se administran</p>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-sec="cuentas/que-es" data-extra="<h3>+INFO · Rangos de UID</h3>UID 0 es siempre root. En Debian/Ubuntu los UID menores de 1000 son cuentas del sistema o de servicio y los de 1000 en adelante son personas. Prueba <b>id</b> en el laboratorio.">
+ <h2 class="ty">¿Qué es una cuenta de usuario?</h2>
+ <div class="grid" style="grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;margin-bottom:26px">
+  <div class="card rv"><h3>Identidad</h3><p>Nombre de usuario y un número único (UID en Linux, SID en Windows).</p></div>
+  <div class="big rv" style="align-self:center">+</div>
+  <div class="card rv"><h3>Credenciales</h3><p>Lo que demuestra que eres tú: contraseña, PIN, huella, llave.</p></div>
+  <div class="big rv" style="align-self:center">+</div>
+  <div class="card rv"><h3>Permisos</h3><p>Lo que la cuenta puede leer, cambiar o ejecutar.</p></div>
+ </div>
+ <h3 class="cy rv">// Tipos de cuenta</h3>
+ <div class="grid g4">
+  <div class="card c rv"><h3>Administrador</h3><p>root en Linux, Administrador en Windows. Control total del sistema.</p></div>
+  <div class="card c rv"><h3>Estándar</h3><p>Uso diario. Puede trabajar, pero no cambiar el sistema.</p></div>
+  <div class="card c rv"><h3>Invitado</h3><p>Acceso temporal y muy limitado. En Windows viene deshabilitada.</p></div>
+  <div class="card c rv"><h3>De servicio</h3><p>La usa un programa, no una persona; por ejemplo, un servidor web.</p></div>
+ </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-sec="cuentas/passwd" data-extra="<h3>+INFO · ¿Qué es la x?</h3>La x indica que el hash de la contraseña no está en /etc/passwd (legible por todos) sino en /etc/shadow, que solo root puede leer. Compruébalo: <b>cat /etc/shadow</b> como estudiante.">
+ <h2 class="ty">¿Dónde guarda el sistema las cuentas?</h2>
+ <div class="cl rv"><code class="cmd">grep ana /etc/passwd</code></div>
+ <div class="term rv" style="margin-bottom:14px">ana:x:1001:1001:Ana Rivera:/home/ana:/bin/bash</div>
+ <div class="grid rv" style="grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:22px">
+  <div class="fld"><b>ana</b><span>Usuario</span></div><div class="fld"><b>x</b><span>Clave en shadow</span></div>
+  <div class="fld"><b>1001</b><span>UID</span></div><div class="fld"><b>1001</b><span>Grupo (GID)</span></div>
+  <div class="fld"><b style="font-size:17px;line-height:24px">Ana Rivera</b><span>Nombre</span></div>
+  <div class="fld"><b style="font-size:17px;line-height:24px">/home/ana</b><span>Carpeta</span></div>
+  <div class="fld"><b style="font-size:17px;line-height:24px">/bin/bash</b><span>Shell</span></div>
+ </div>
+ <div class="grid g2">
+  <div class="card rv"><h3>Linux</h3>
+   <p><span class="cy">/etc/passwd</span> — datos de cada cuenta</p>
+   <p><span class="cy">/etc/shadow</span> — contraseñas en hash (solo root)</p>
+   <p><span class="cy">/etc/group</span> — grupos y sus miembros</p></div>
+  <div class="card rv"><h3>Windows</h3>
+   <p><span class="cy">SAM</span> — cuentas locales del equipo</p>
+   <p><span class="cy">Active Directory</span> — cuentas de un dominio empresarial</p>
+   <p><span class="cy">Cuenta Microsoft</span> — cuenta en línea vinculada al equipo</p></div>
+ </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-sec="cuentas/linux">
+ <h2 class="ty">Administrar cuentas en Linux</h2>
+ <p class="dim rv" style="margin-top:-14px;margin-bottom:12px">// haz clic en un comando para probarlo en el laboratorio</p>
+ <div class="grid g2" style="gap:6px 30px">
+  <div class="cl rv"><code class="cmd">sudo groupadd estudiantes</code><div class="d">Crea el grupo estudiantes</div></div>
+  <div class="cl rv"><code class="cmd">sudo useradd -m -s /bin/bash ana</code><div class="d">Crea la cuenta ana con su carpeta personal</div></div>
+  <div class="cl rv"><code class="cmd">sudo passwd ana</code><div class="d">Asigna o cambia la contraseña</div></div>
+  <div class="cl rv"><code class="cmd">sudo usermod -aG estudiantes ana</code><div class="d">Añade a ana al grupo, sin quitarle los otros</div></div>
+  <div class="cl rv"><code class="cmd">id ana</code><div class="d">Muestra su UID, su grupo y sus grupos</div></div>
+  <div class="cl rv"><code class="cmd">sudo usermod -L ana</code><div class="d">Bloquea su contraseña (-U la desbloquea)</div></div>
+  <div class="cl rv"><code class="cmd">sudo userdel -r ana</code><div class="d">Elimina la cuenta y su carpeta personal</div></div>
+ </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-sec="cuentas/windows">
+ <h2 class="ty">Administrar cuentas en Windows</h2>
+ <div class="grid g2" style="gap:26px">
+  <div class="card rv"><h3 class="cy">Con la interfaz gráfica</h3>
+   <p style="font-size:19px;margin-bottom:14px">Configuración → Cuentas → Otros usuarios <span class="dim">(en Windows 10: Familia y otros usuarios)</span></p>
+   <p style="font-size:19px">o, en las ediciones Pro y Enterprise, la consola <b class="g" style="color:var(--g)">lusrmgr.msc</b> (Usuarios y grupos locales).</p></div>
+  <div class="card rv"><h3 class="cy">Con comandos <span class="dim" style="font-weight:400">(consola como administrador)</span></h3>
+   <div class="cl"><code class="cmd">net user ana * /add</code><div class="d">Crea la cuenta ana y pide la contraseña</div></div>
+   <div class="cl"><code class="cmd">net localgroup Administradores ana /add</code><div class="d">La hace administradora: solo si es necesario</div></div>
+   <div class="cl"><code class="cmd">net user ana /active:no</code><div class="d">Deshabilita la cuenta</div></div>
+   <div class="cl"><code class="cmd">Get-LocalUser</code><div class="d">PowerShell: lista las cuentas locales</div></div></div>
+ </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-sec="cuentas/ciclo-de-vida">
+ <h2 class="ty">El ciclo de vida de una cuenta</h2>
+ <div class="chain" style="margin-bottom:30px">
+  <div class="card rv"><div class="n">1</div><h3>Crear</h3><p>cuando llega la persona</p></div><div class="ar">▶</div>
+  <div class="card rv"><div class="n">2</div><h3>Asignar</h3><p>a los grupos de su puesto</p></div><div class="ar">▶</div>
+  <div class="card rv"><div class="n">3</div><h3>Usar</h3><p>con solo los permisos necesarios</p></div><div class="ar">▶</div>
+  <div class="card rv"><div class="n">4</div><h3>Revisar</h3><p>periódicamente sus permisos</p></div><div class="ar">▶</div>
+  <div class="card rv"><div class="n">5</div><h3>Deshabilitar</h3><p>el día que se va</p></div><div class="ar">▶</div>
+  <div class="card rv"><div class="n">6</div><h3>Eliminar</h3><p>cuando ya no hace falta nada</p></div>
+ </div>
+ <div class="card r rv"><h3>⚠ Error común</h3><p style="font-size:19px">Un empleado renuncia y su cuenta sigue activa durante meses. Cualquiera que conozca su contraseña puede seguir entrando. Por eso se deshabilita el mismo día.</p></div>
+</section>
+
+<!-- 11 -->
+<section class="slide sec" data-sec="02-permisos">
+ <div class="big1 rv">2</div>
+ <h1 class="rv ty">Permisos y roles</h1>
+ <p class="rv" style="font-size:22px;margin-top:14px">Quién puede hacer qué con cada archivo</p>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-sec="permisos/rwx" data-extra="<h3>+INFO · Bit pegajoso (sticky)</h3>En carpetas compartidas como /tmp, <b>chmod +t</b> hace que cada quien solo pueda borrar sus propios archivos, aunque todos puedan escribir. Se ve como una t al final: drwxrwxrwt.">
+ <h2 class="ty">Permisos en Linux: rwx</h2>
+ <div class="cl rv"><code class="cmd">ls -l notas.txt</code></div>
+ <div class="term rv" style="margin-bottom:14px;font-size:18px">-rw-r-----&nbsp; 1&nbsp; ana&nbsp; estudiantes&nbsp; 2048&nbsp; oct 15 08:00&nbsp; notas.txt</div>
+ <div class="grid g4 rv" style="margin-bottom:22px">
+  <div class="fld"><b>-</b><span>Tipo: archivo (d = carpeta)</span></div>
+  <div class="fld"><b>rw-</b><span>Dueño: ana — lee y escribe</span></div>
+  <div class="fld"><b>r--</b><span>Grupo: estudiantes — solo lee</span></div>
+  <div class="fld"><b>---</b><span>Otros — nada</span></div>
+ </div>
+ <div class="grid g3">
+  <div class="card rv"><div class="n">r</div><h3>Leer</h3><p><b>Archivo:</b> ver el contenido<br><b>Carpeta:</b> listar lo que tiene</p></div>
+  <div class="card rv"><div class="n">w</div><h3>Escribir</h3><p><b>Archivo:</b> modificarlo<br><b>Carpeta:</b> crear o borrar archivos</p></div>
+  <div class="card rv"><div class="n">x</div><h3>Ejecutar</h3><p><b>Archivo:</b> correrlo como programa<br><b>Carpeta:</b> entrar en ella</p></div>
+ </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-sec="permisos/octal">
+ <h2 class="ty">La notación octal: permisos en números</h2>
+ <div class="grid" style="grid-template-columns:auto 1fr;gap:34px">
+  <div>
+   <div class="grid g3 rv" style="margin-bottom:18px"><div class="fld"><b>r</b><span>= 4</span></div><div class="fld"><b>w</b><span>= 2</span></div><div class="fld"><b>x</b><span>= 1</span></div></div>
+   <div class="card c rv">
+    <h3>Ejemplo: 640</h3>
+    <p><b class="cy">6</b> = 4 + 2 → rw- → dueño</p>
+    <p><b class="cy">4</b> = 4 → r-- → grupo</p>
+    <p><b class="cy">0</b> = 0 → --- → otros</p>
+   </div>
+   <div class="card rv" style="margin-top:18px"><h3>Calculadora interactiva</h3>
+    <div class="oct" id="calc">
+     <div style="display:grid;grid-template-columns:repeat(3,58px);gap:6px" id="tgs"></div>
+     <div><div class="big" style="font-size:44px" id="coct">000</div><div class="cy" id="csym">---------</div></div>
+    </div>
+    <p class="dim" style="margin-top:6px;font-size:13px">filas: dueño · grupo · otros &nbsp; columnas: r w x</p>
+   </div>
+  </div>
+  <div>
+   <h3 class="cy rv">// Valores comunes</h3>
+   <table class="rv">
+    <tr><th>Octal</th><th>Símbolos</th><th>Para qué</th></tr>
+    <tr><td>755</td><td>rwxr-xr-x</td><td>programas y carpetas públicas</td></tr>
+    <tr><td>700</td><td>rwx------</td><td>carpeta privada del dueño</td></tr>
+    <tr><td>644</td><td>rw-r--r--</td><td>archivo que todos pueden leer</td></tr>
+    <tr><td>640</td><td>rw-r-----</td><td>archivo para el dueño y su grupo</td></tr>
+    <tr><td>600</td><td>rw-------</td><td>archivo privado</td></tr>
+   </table>
+  </div>
+ </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-sec="permisos/chmod-chown" data-extra="<h3>+INFO · umask</h3>El umask define los permisos de lo que se crea. Con umask 022, los archivos nuevos quedan en 644 y las carpetas en 755. Verifícalo creando algo con <b>touch</b> y <b>mkdir</b> y mirando <b>ls -l</b>.">
+ <h2 class="ty">Cambiar permisos y dueños: chmod y chown</h2>
+ <div class="grid g2" style="gap:6px 30px">
+  <div class="cl rv"><code class="cmd">chmod 640 notas.txt</code><div class="d">Dueño lee y escribe; grupo lee; otros nada</div></div>
+  <div class="cl rv"><code class="cmd">chmod u+x respaldo.sh</code><div class="d">Le da al dueño permiso de ejecutar</div></div>
+  <div class="cl rv"><code class="cmd">chmod o-r informe.txt</code><div class="d">Le quita la lectura a los otros</div></div>
+  <div class="cl rv"><code class="cmd">sudo chown ana notas.txt</code><div class="d">Cambia el dueño a ana</div></div>
+  <div class="cl rv"><code class="cmd">sudo chown ana:estudiantes notas.txt</code><div class="d">Cambia el dueño y el grupo a la vez</div></div>
+  <div class="cl rv"><code class="cmd">chmod -R g-w proyecto/</code><div class="d">Quita la escritura al grupo en la carpeta y todo lo que tiene</div></div>
+ </div>
+ <p class="dim rv" style="margin-top:14px">// u = dueño · g = grupo · o = otros · a = todos &nbsp;|&nbsp; + añade · - quita · = fija</p>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-sec="permisos/ntfs">
+ <h2 class="ty">Permisos en Windows: NTFS</h2>
+ <div class="grid" style="grid-template-columns:1.25fr 1fr;gap:24px">
+  <div>
+   <h3 class="cy rv">// Permisos básicos (Propiedades → Seguridad)</h3>
+   <table class="rv" style="margin-bottom:16px">
+    <tr><td>Control total</td><td>Todo, incluso cambiar permisos</td></tr>
+    <tr><td>Modificar</td><td>Leer, escribir y eliminar</td></tr>
+    <tr><td>Lectura y ejecución</td><td>Ver y correr programas</td></tr>
+    <tr><td>Mostrar el contenido de la carpeta</td><td>Ver qué hay dentro</td></tr>
+    <tr><td>Lectura</td><td>Ver el contenido</td></tr>
+    <tr><td>Escritura</td><td>Crear y cambiar contenido</td></tr>
+   </table>
+   <div class="card c rv"><h3>Herencia</h3><p>Lo que se crea dentro de una carpeta recibe sus permisos. Por eso se configuran las carpetas, no cada archivo.</p></div>
+  </div>
+  <div class="card rv"><h3 class="cy">icacls en la consola</h3>
+   <div class="cl"><code class="cmd">icacls notas.txt</code><div class="d">ver los permisos</div></div>
+   <div class="cl"><code class="cmd">icacls notas.txt /grant ana:R</code><div class="d">darle lectura a ana</div></div>
+   <div class="cl"><code class="cmd">icacls notas.txt /remove ana</code><div class="d">quitarle los permisos</div></div>
+  </div>
+ </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-sec="permisos/roles">
+ <h2 class="ty">Roles: los permisos se asignan a grupos</h2>
+ <div class="grid" style="grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;margin-bottom:26px">
+  <div class="rv"><h3 class="cy" style="text-align:center">Personas</h3><span class="chip">María</span><span class="chip">José</span><span class="chip">Luis</span><span class="chip">Carmen</span></div>
+  <div class="big rv">▶</div>
+  <div class="rv"><h3 class="cy" style="text-align:center">Grupos (roles)</h3><span class="chip">Profesores</span><span class="chip">Estudiantes</span><span class="chip">Registraduría</span></div>
+  <div class="big rv">▶</div>
+  <div class="rv"><h3 class="cy" style="text-align:center">Permisos</h3><span class="chip">Notas: modificar</span><span class="chip">Tareas: leer y entregar</span><span class="chip">Expedientes: modificar</span></div>
+ </div>
+ <div class="card w rv"><h3>Idea clave</h3><p style="font-size:20px">Si José pasa de estudiante a asistente de registraduría, solo se le cambia de grupo.</p></div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-sec="permisos/linux-vs-windows">
+ <h2 class="ty">Linux y Windows, lado a lado</h2>
+ <table class="rv">
+  <tr><th></th><th>Linux</th><th>Windows</th></tr>
+  <tr><td>Superusuario</td><td>root</td><td>Administrador</td></tr>
+  <tr><td>Pedir permiso de administrador</td><td>sudo</td><td>Control de Cuentas de Usuario (UAC)</td></tr>
+  <tr><td>Dónde están las cuentas</td><td>/etc/passwd y /etc/shadow</td><td>SAM o Active Directory</td></tr>
+  <tr><td>Modelo de permisos</td><td>rwx para dueño, grupo y otros</td><td>Listas de control de acceso (ACL)</td></tr>
+  <tr><td>Cambiar permisos</td><td>chmod y chown</td><td>Propiedades → Seguridad, icacls</td></tr>
+  <tr><td>Crear una cuenta</td><td>useradd</td><td>Configuración, net user, New-LocalUser</td></tr>
+ </table>
+</section>
+
+<!-- 18 -->
+<section class="slide sec" data-sec="03-seguridad">
+ <div class="big1 rv">3</div>
+ <h1 class="rv ty">Seguridad de las cuentas</h1>
+ <p class="rv" style="font-size:22px;margin-top:14px">Menor privilegio, contraseñas y MFA</p>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-sec="seguridad/menor-privilegio" data-extra="<h3>+INFO · sudo -l</h3><b>sudo -l</b> lista qué comandos puede ejecutar tu cuenta con sudo. Un técnico lo usa para auditar si una cuenta tiene más poder del que necesita.">
+ <h2 class="ty">El principio de menor privilegio</h2>
+ <div class="grid g2" style="margin-bottom:22px">
+  <div class="card r rv"><h3>Cuenta de administrador</h3><p>› Instala programas y cambia el sistema</p><p>› Si se infecta, el malware controla todo</p><p>› Úsala solo cuando haga falta</p></div>
+  <div class="card rv"><h3>Cuenta estándar</h3><p>› Trabajo diario: documentos, navegador, correo</p><p>› Pide permiso para los cambios grandes</p><p>› Limita el daño de un error o un ataque</p></div>
+ </div>
+ <h3 class="cy rv">// Cuando hace falta más poder</h3>
+ <div class="grid g2">
+  <div class="card c rv"><h3>Linux</h3><p><b style="color:var(--g)">sudo</b> pide tu contraseña y ejecuta un solo comando como administrador.</p></div>
+  <div class="card c rv"><h3>Windows</h3><p>El <b style="color:var(--g)">Control de Cuentas de Usuario (UAC)</b> pide confirmación o la contraseña del administrador.</p></div>
+ </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-sec="seguridad/contrasenas">
+ <h2 class="ty">Contraseñas que sí protegen</h2>
+ <div class="grid g2" style="margin-bottom:20px">
+  <div class="card rv"><h3>✓ Sí</h3>
+   <p>› Frases largas: «mi perro come mangos los martes»</p><p>› Una contraseña distinta para cada servicio</p>
+   <p>› Un gestor de contraseñas para recordarlas</p><p>› Cambiarla de inmediato si hay sospecha</p></div>
+  <div class="card r rv"><h3>✗ No</h3>
+   <p>› Datos personales: nombre, fecha de nacimiento</p><p>› Palabras comunes: 123456, password, admin</p>
+   <p>› Usar la misma en todas partes</p><p>› Anotarla en un papel pegado al monitor</p></div>
+ </div>
+ <div class="card w rv"><h3>Bloqueo de cuenta</h3>
+  <p>Tras varios intentos fallidos, el sistema bloquea la cuenta por un tiempo.</p>
+  <p>Esto frena a quien intenta adivinar la contraseña probando miles de combinaciones (<b class="am">fuerza bruta</b>).</p></div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-sec="seguridad/mfa" data-extra="<h3>+INFO · Códigos temporales</h3>Las apps de códigos (TOTP) generan un número nuevo cada 30 segundos a partir de un secreto compartido y la hora. Aunque alguien robe la contraseña, sin el teléfono no entra.">
+ <h2 class="ty">Autenticación multifactor (MFA)</h2>
+ <div class="grid g3" style="margin-bottom:24px">
+  <div class="card rv"><div class="n">1</div><h3>Algo que sabes</h3><p>Contraseña o PIN</p></div>
+  <div class="card rv"><div class="n">2</div><h3>Algo que tienes</h3><p>Teléfono con una app de códigos o una llave de seguridad</p></div>
+  <div class="card rv"><div class="n">3</div><h3>Algo que eres</h3><p>Huella dactilar o reconocimiento del rostro</p></div>
+ </div>
+ <div class="grid g2">
+  <div class="card rv"><h3>✓ Sí es MFA</h3><p style="font-size:19px">Contraseña + código en el teléfono</p></div>
+  <div class="card r rv"><h3>✗ No es MFA</h3><p style="font-size:19px">Contraseña + pregunta de seguridad (las dos son «algo que sabes»)</p></div>
+ </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-sec="seguridad/senales-de-alerta">
+ <h2 class="ty">Señales de alerta que un técnico debe encontrar</h2>
+ <div class="grid g3" style="gap:16px">
+  <div class="card w rv"><h3>! Cuentas compartidas</h3><p>Varias personas usan la misma cuenta: nadie responde por lo que se hace.</p></div>
+  <div class="card w rv"><h3>! Exempleados activos</h3><p>Cuentas de personas que ya no trabajan ahí y siguen habilitadas.</p></div>
+  <div class="card w rv"><h3>! Todos son administradores</h3><p>Se violó el menor privilegio: un error o un virus afecta a todo.</p></div>
+  <div class="card w rv"><h3>! Invitado habilitado</h3><p>La cuenta de invitado activa abre una puerta sin contraseña.</p></div>
+  <div class="card w rv"><h3>! Contraseñas débiles o anotadas</h3><p>Fáciles de adivinar o a la vista de cualquiera.</p></div>
+  <div class="card w rv"><h3>! Permisos para «Todos»</h3><p>Carpetas con información sensible que cualquiera puede leer.</p></div>
+ </div>
+</section>
+
+<!-- 23 -->
+<section class="slide sec" data-sec="04-aplicar">
+ <div class="big1 rv">4</div>
+ <h1 class="rv ty">Caso, práctica y repaso</h1>
+ <p class="rv" style="font-size:22px;margin-top:14px">Aplicar lo aprendido</p>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-sec="aplicar/caso">
+ <h2 class="ty">Caso: la oficina de la doctora</h2>
+ <div class="grid" style="grid-template-columns:1.2fr 1fr;gap:26px">
+  <div class="card w rv"><h3>El escenario</h3>
+   <p style="font-size:18px;margin-bottom:10px">› Una oficina médica pequeña tiene cinco empleados.</p>
+   <p style="font-size:18px;margin-bottom:10px">› Todos entran a la computadora con la misma cuenta, «recepcion», que es administradora.</p>
+   <p style="font-size:18px;margin-bottom:10px">› La contraseña está en un papel pegado al monitor.</p>
+   <p style="font-size:18px;margin-bottom:10px">› La carpeta de expedientes de pacientes la puede abrir cualquiera.</p>
+   <p style="font-size:18px">› Una empleada renunció el mes pasado.</p></div>
+  <div>
+   <div class="card rv" style="margin-bottom:14px"><div class="n">1</div><p style="font-size:18px">¿Qué problemas de seguridad encuentras?</p></div>
+   <div class="card rv" style="margin-bottom:14px"><div class="n">2</div><p style="font-size:18px">¿Qué cuentas y grupos crearías?</p></div>
+   <div class="card rv"><div class="n">3</div><p style="font-size:18px">¿Qué harías hoy mismo, antes que nada?</p></div>
+  </div>
+ </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" data-sec="aplicar/practica">
+ <h2 class="ty">Práctica guiada en Linux</h2>
+ <div style="display:flex;gap:30px">
+  <div style="flex:1">
+   <div class="cl rv"><code class="cmd">sudo groupadd contabilidad</code><div class="d">1. Crea el grupo del departamento</div></div>
+   <div class="cl rv"><code class="cmd">sudo useradd -m -G contabilidad luis</code><div class="d">2. Crea a luis dentro del grupo</div></div>
+   <div class="cl rv"><code class="cmd">sudo passwd luis</code><div class="d">3. Asigna su contraseña</div></div>
+   <div class="cl rv"><code class="cmd">sudo mkdir /srv/contabilidad</code><div class="d">4. Crea la carpeta compartida</div></div>
+   <div class="cl rv"><code class="cmd">sudo chown root:contabilidad /srv/contabilidad</code><div class="d">5a. El grupo será contabilidad</div></div>
+   <div class="cl rv"><code class="cmd">sudo chmod 770 /srv/contabilidad</code><div class="d">5b. Solo el dueño y el grupo entran</div></div>
+   <div class="cl rv"><code class="cmd">ls -ld /srv/contabilidad ; id luis</code><div class="d">6. Verifica el resultado</div></div>
+  </div>
+  <div class="card c rv" style="width:300px;align-self:flex-start;text-align:center">
+   <h3>Hazlo tú mismo</h3><p style="margin-bottom:14px">El laboratorio simula Linux con usuarios, grupos y permisos reales.</p>
+   <button onclick="openLab()" style="padding:10px 16px;font-size:15px">▶ ABRIR TERMINAL</button></div>
+ </div>
+</section>
+
+<!-- 26 -->
+<section class="slide" data-sec="aplicar/repaso">
+ <h2 class="ty">Repaso: cuatro preguntas</h2>
+ <div class="grid g2" style="gap:20px">
+  <div class="card rv"><div class="n">1</div><p style="font-size:20px">¿Qué permite <b style="color:var(--g)">chmod 640</b> al dueño, al grupo y a los otros?</p></div>
+  <div class="card rv"><div class="n">2</div><p style="font-size:20px">¿Por qué no se debe trabajar todo el día como administrador?</p></div>
+  <div class="card rv"><div class="n">3</div><p style="font-size:20px">Un empleado renuncia hoy. ¿Qué se hace con su cuenta?</p></div>
+  <div class="card rv"><div class="n">4</div><p style="font-size:20px">¿Contraseña más pregunta de seguridad es MFA? ¿Por qué?</p></div>
+ </div>
+</section>
+
+<!-- 27 -->
+<section class="slide" data-sec="fin">
+ <h2 class="ty">Ideas para llevarte</h2>
+ <div class="card rv" style="margin-bottom:22px"><p style="font-size:26px;color:var(--g)">Cada persona, su cuenta. Cada cuenta, solo lo necesario.</p></div>
+ <div class="grid g3">
+  <div class="card rv"><div class="n">1</div><p style="font-size:19px">Las cuentas se crean, se revisan y se deshabilitan a tiempo.</p></div>
+  <div class="card rv"><div class="n">2</div><p style="font-size:19px">Los permisos se asignan a grupos que representan roles.</p></div>
+  <div class="card rv"><div class="n">3</div><p style="font-size:19px">Menor privilegio, contraseñas largas y MFA protegen las cuentas.</p></div>
+ </div>
+ <div style="margin-top:30px;text-align:center" class="rv"><button onclick="openLab()" style="padding:12px 22px;font-size:16px">▶ PRACTICAR EN EL LABORATORIO</button></div>
+</section>
+
+<div class="extra" id="extra"></div>
+<div id="foot"><span>← → navegar</span><span>T terminal</span><span>I info extra</span><span>F pantalla completa</span><span class="sp"></span>
+ <button id="xbtn" onclick="toggleExtra()" style="display:none">+INFO</button>
+ <button onclick="go(-1)">◀</button><button onclick="go(1)">▶</button><button onclick="openLab()">&gt;_ LAB</button></div>
+<div id="bar"></div>
+</div>
+
+<!-- TERMINAL -->
+<div id="lab">
+ <div class="tb"><b>● ● ●</b>
+  <button class="tab on" id="tabL" onclick="setMode('lin')">LINUX · bash</button>
+  <button class="tab" id="tabW" onclick="setMode('win')">WINDOWS · PowerShell</button>
+  <span class="sp"></span><span>Esc para cerrar</span><button onclick="closeLab()" aria-label="Cerrar el laboratorio">✕</button></div>
+ <div class="bd">
+  <div id="tout"><div id="log" role="log" aria-live="polite"></div><div id="logW" role="log" aria-live="polite" style="display:none"></div><div id="tin"><span id="pr"></span><input id="inp" aria-label="Línea de comandos" autocomplete="off" autocapitalize="off" spellcheck="false"></div></div>
+  <div id="side">
+   <div class="stabs"><button class="tab on" id="sM" onclick="sideTab('m')">MISIONES</button><button class="tab" id="sR" onclick="sideTab('r')">COMANDOS</button></div>
+   <div id="pm"><div id="pbar"><div></div></div><div id="ml"></div></div>
+   <div id="rl" style="display:none"></div>
+   <button onclick="resetLab()" style="margin-top:14px;width:100%">↺ REINICIAR LAB</button>
+  </div>
+ </div>
+</div>
+
+<script>
+/* ---------- matrix rain ---------- */
+(()=>{const c=document.getElementById('rain'),x=c.getContext('2d');let cols,drops;
+ const chars='01アイウエオカキクケコ$#/ABCDEFrwx';
+ function size(){c.width=innerWidth;c.height=innerHeight;cols=Math.ceil(c.width/16);drops=Array.from({length:cols},()=>Math.random()*-50)}
+ size();addEventListener('resize',size);
+ if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+ setInterval(()=>{x.fillStyle='rgba(1,8,5,.12)';x.fillRect(0,0,c.width,c.height);x.fillStyle='#00ff66';x.font='15px monospace';
+  drops.forEach((y,i)=>{x.fillText(chars[Math.random()*chars.length|0],i*16,y*16);drops[i]=(y*16>c.height&&Math.random()>.975)?0:y+1})},60)})();
+
+/* ---------- deck ---------- */
+const slides=[...document.querySelectorAll('.slide')],stage=document.getElementById('stage');
+let cur=0;
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);stage.style.transform=`translate(-50%,-50%) scale(${s})`}
+addEventListener('resize',fit);fit();
+function typeTitle(el){const t=el.dataset.t||(el.dataset.t=el.textContent);el.textContent='';el.classList.add('cur');let i=0;
+ clearInterval(el._i);el._i=setInterval(()=>{el.textContent=t.slice(0,++i);if(i>=t.length){clearInterval(el._i)}},22)}
+function show(n){
+ cur=Math.max(0,Math.min(slides.length-1,n));
+ slides.forEach((s,i)=>s.classList.toggle('active',i===cur));
+ const s=slides[cur];
+ s.querySelectorAll('.rv').forEach((e,i)=>e.style.setProperty('--d',(150+i*80)+'ms'));
+ s.querySelectorAll('.ty').forEach(typeTitle);
+ document.getElementById('path').textContent='~/tesi1111/unidad3b/'+(s.dataset.sec||'');
+ document.getElementById('ctr').innerHTML='<b>'+String(cur+1).padStart(2,'0')+'</b> / '+slides.length;
+ document.getElementById('bar').style.width=((cur+1)/slides.length*100)+'%';
+ const ex=document.getElementById('extra');ex.classList.remove('show');ex.innerHTML=s.dataset.extra||'';
+ document.getElementById('xbtn').style.display=s.dataset.extra?'':'none';
+ history.replaceState(null,'','#'+(cur+1));
+}
+const go=d=>show(cur+d);
+function toggleExtra(){document.getElementById('extra').classList.toggle('show')}
+addEventListener('keydown',e=>{
+ if(lab.classList.contains('show')){if(e.key==='Escape')closeLab();return}
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ const k=e.key;
+ if(['ArrowRight','PageDown',' ','Enter'].includes(k)){go(1);e.preventDefault()}
+ else if(['ArrowLeft','PageUp','Backspace'].includes(k))go(-1);
+ else if(k==='Home')show(0);else if(k==='End')show(slides.length-1);
+ else if(k==='t'||k==='T'||k==='`'){openLab();e.preventDefault()}
+ else if(k==='i'||k==='I')toggleExtra();
+ else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+});
+
+/* calculator */
+(()=>{const tg=document.getElementById('tgs');let v=0;
+ 'rwxrwxrwx'.split('').forEach((l,i)=>{const b=document.createElement('button');b.className='tg';b.textContent=l;
+  b.onclick=()=>{v^=1<<(8-i);b.classList.toggle('on');upd()};tg.appendChild(b)});
+ function upd(){document.getElementById('coct').textContent=[6,3,0].map(s=>(v>>s)&7).join('');
+  document.getElementById('csym').textContent=[...'rwxrwxrwx'].map((l,i)=>v&(1<<(8-i))?l:'-').join('')}
+ const pre=0o640;[...tg.children].forEach((b,i)=>{if(pre&(1<<(8-i))){b.classList.add('on');v|=1<<(8-i)}});upd()})();
+
+/* ---------- terminal simulator ---------- */
+const lab=document.getElementById('lab'),tout=document.getElementById('tout'),log=document.getElementById('log'),
+ inp=document.getElementById('inp'),prEl=document.getElementById('pr');
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+let T,eu,hist=[],hi=0;
+
+function reset(){
+ T={cwd:'/home/estudiante',user:'estudiante',stack:[],prompt:null,hist:[],
+  users:{root:{uid:0,gid:0,name:'root',home:'/root',shell:'/bin/bash'},
+   daemon:{uid:1,gid:1,name:'daemon',home:'/usr/sbin',shell:'/usr/sbin/nologin'},
+   'www-data':{uid:33,gid:33,name:'www-data',home:'/var/www',shell:'/usr/sbin/nologin'},
+   estudiante:{uid:1000,gid:1000,name:'Estudiante TESI',home:'/home/estudiante',shell:'/bin/bash'}},
+  groups:{root:{gid:0,m:[]},daemon:{gid:1,m:[]},sudo:{gid:27,m:['estudiante']},shadow:{gid:42,m:[]},
+   'www-data':{gid:33,m:[]},estudiante:{gid:1000,m:[]}},
+  pw:{root:'root',estudiante:'estudiante'},locked:{},fs:{}};
+ const F=T.fs,d=(p,o,g,m)=>F[p]={t:'d',o,g,m},f=(p,o,g,m,c)=>F[p]={t:'f',o,g,m,c};
+ d('/','root','root',0o755);['/etc','/home','/srv','/tmp','/root','/bin','/usr','/var'].forEach(p=>d(p,'root','root',0o755));
+ F['/tmp'].m=0o1777;F['/root'].m=0o700;
+ f('/etc/passwd','root','root',0o644,null);F['/etc/passwd'].gen='passwd';
+ f('/etc/group','root','root',0o644,null);F['/etc/group'].gen='group';
+ f('/etc/shadow','root','shadow',0o640,null);F['/etc/shadow'].gen='shadow';
+ f('/etc/hostname','root','root',0o644,'tesi-lab\n');
+ const H='/home/estudiante';d(H,'estudiante','estudiante',0o750);
+ f(H+'/notas.txt','estudiante','estudiante',0o644,'Apuntes de la clase de usuarios y permisos.\n');
+ f(H+'/informe.txt','estudiante','estudiante',0o644,'Informe trimestral. Confidencial.\n');
+ f(H+'/respaldo.sh','estudiante','estudiante',0o644,'#!/bin/bash\necho "respaldo listo"\n');
+ d(H+'/proyecto','estudiante','estudiante',0o755);f(H+'/proyecto/README','estudiante','estudiante',0o664,'Proyecto final.\n');
+}
+const dirname=p=>p==='/'?'/':(p.replace(/\/[^/]*$/,'')||'/');
+const norm=p=>{const o=[];for(const s of p.split('/')){if(!s||s==='.')continue;s==='..'?o.pop():o.push(s)}return '/'+o.join('/')};
+const home=u=>(T.users[u]||{}).home||'/';
+const abs=p=>norm(p==='~'||p.startsWith('~/')?home(T.user)+p.slice(1):p.startsWith('/')?p:T.cwd+'/'+p);
+const kids=d=>Object.keys(T.fs).filter(k=>k!=='/'&&dirname(k)===d);
+const gsOf=u=>{const s=new Set(),us=T.users[u];for(const[g,x]of Object.entries(T.groups)){if(x.m.includes(u)||(us&&x.gid===us.gid))s.add(g)}return s};
+const gname=gid=>Object.keys(T.groups).find(g=>T.groups[g].gid===gid)||String(gid);
+function can(n,b){if(eu==='root')return true;const m=n.m&0o777;
+ if(n.o===eu)return (m>>6)&b;if(gsOf(eu).has(n.g))return (m>>3)&b;return m&b}
+function reach(p){let d=dirname(p),n;while(true){n=T.fs[d];if(n&&!can(n,1))return false;if(d==='/')return true;d=dirname(d)}}
+const modeStr=n=>{let s=n.t==='d'?'d':'-';for(let i=8;i>=0;i--)s+=(n.m&(1<<i))?'rwx'[(8-i)%3]:'-';
+ if(n.m&0o1000)s=s.slice(0,-1)+((n.m&1)?'t':'T');return s};
+const size=n=>n.t==='d'?4096:(n.gen?(gen(n.gen).length):(n.c||'').length);
+function gen(k){
+ if(k==='passwd')return Object.entries(T.users).map(([n,u])=>`${n}:x:${u.uid}:${u.gid}:${u.name}:${u.home}:${u.shell}`).join('\n')+'\n';
+ if(k==='group')return Object.entries(T.groups).map(([n,g])=>`${n}:x:${g.gid}:${g.m.join(',')}`).join('\n')+'\n';
+ return Object.keys(T.users).map(n=>`${n}:${T.locked[n]?'!':''}${T.pw[n]?'$6$'+btoa(n+T.pw[n]).slice(0,12)+'$k9Xz...':(T.users[n].shell.includes('nologin')?'*':'!')}:20376:0:99999:7:::`).join('\n')+'\n'}
+const nameHtml=(nm,n)=>n.t==='d'?`<span class="c-d">${esc(nm)}</span>`:(n.m&0o111?`<span class="c-x">${esc(nm)}</span>`:esc(nm));
+
+/* output */
+var L=log,mode='lin',W;
+function outH(h){L.insertAdjacentHTML('beforeend',h+'\n');tout.scrollTop=tout.scrollHeight}
+const out=s=>outH(esc(s)),err=s=>outH(`<span class="e">${esc(s)}</span>`);
+const needRoot=c=>{if(eu!=='root'){err(`${c}: Permiso denegado. Necesitas privilegios de administrador (usa sudo).`);return false}return true};
+function nextId(){return Math.max(999,...Object.values(T.users).map(u=>u.uid).filter(x=>x<60000))+1}
+
+const C={
+ help(){outH(`<span class="c-x">Comandos disponibles:</span>
+  <span class="c-x">Archivos</span>   ls [-l -a -d] · cd · pwd · cat · mkdir · touch · rm [-r] · echo [> archivo]
+  <span class="c-x">Cuentas</span>    id · whoami · groups · useradd · userdel · usermod · passwd · groupadd · su · exit
+  <span class="c-x">Permisos</span>   chmod (640 o u+x) · chown usuario[:grupo] · grep patrón archivo
+  <span class="c-x">Otros</span>      sudo comando · history · clear · reset
+  Atajos: ↑↓ historial · Tab autocompleta · Ctrl+L limpia
+  Pistas: lee /etc/passwd, /etc/group y /etc/shadow. Contraseñas: root → "root".`)},
+ clear(){log.innerHTML=''},
+ pwd(){out(T.cwd)},
+ whoami(){out(eu)},
+ history(){T.hist.forEach((h,i)=>out(String(i+1).padStart(4)+'  '+h))},
+ cd([p]){const t=p?abs(p):home(T.user),n=T.fs[t];
+  if(!n)return err(`bash: cd: ${p}: No existe el archivo o el directorio`);
+  if(n.t!=='d')return err(`bash: cd: ${p}: No es un directorio`);
+  if(!reach(t)||!can(n,1))return err(`bash: cd: ${p}: Permiso denegado`);T.cwd=t},
+ ls(a){const fl=a.filter(x=>x[0]==='-').join(''),ps=a.filter(x=>x[0]!=='-'),L=fl.includes('l'),A=fl.includes('a'),D=fl.includes('d');
+  if(!ps.length)ps.push('.');
+  ps.forEach(p=>{const t=abs(p),n=T.fs[t];
+   if(!n)return err(`ls: no se puede acceder a '${p}': No existe el archivo o el directorio`);
+   let l;
+   if(n.t==='d'&&!D){
+    if(!reach(t)||!can(n,4))return err(`ls: no se puede abrir el directorio '${p}': Permiso denegado`);
+    if(ps.length>1)out(p+':');
+    l=kids(t).map(k=>[k.split('/').pop(),T.fs[k]]).filter(([nm])=>A||nm[0]!=='.');
+    if(A)l.unshift(['.',n],['..',n]);l.sort((a,b)=>a[0].localeCompare(b[0]));
+   }else l=[[p,n]];
+   if(L)l.forEach(([nm,x])=>outH(`${modeStr(x)} ${String(x.t==='d'?2:1).padStart(2)} ${x.o.padEnd(10)} ${x.g.padEnd(12)} ${String(size(x)).padStart(5)} oct 15 08:00 ${nameHtml(nm,x)}`));
+   else if(l.length)outH(l.map(([nm,x])=>nameHtml(nm,x)).join('  '));});},
+ cat(a){a.forEach(p=>{const t=abs(p),n=T.fs[t];
+  if(!n)return err(`cat: ${p}: No existe el archivo o el directorio`);
+  if(n.t==='d')return err(`cat: ${p}: Es un directorio`);
+  if(!reach(t)||!can(n,4))return err(`cat: ${p}: Permiso denegado`);
+  const c=n.gen?gen(n.gen):n.c;if(c)out(c.replace(/\n$/,''))})},
+ grep([pat,...fs]){if(!pat||!fs.length)return err('Uso: grep PATRÓN ARCHIVO');
+  fs.forEach(p=>{const t=abs(p),n=T.fs[t];
+   if(!n)return err(`grep: ${p}: No existe el archivo o el directorio`);
+   if(n.t==='d')return err(`grep: ${p}: Es un directorio`);
+   if(!reach(t)||!can(n,4))return err(`grep: ${p}: Permiso denegado`);
+   (n.gen?gen(n.gen):n.c).split('\n').filter(l=>l.includes(pat)).forEach(out)})},
+ echo(a){out(a.join(' '))},
+ mkdir(a){a.filter(x=>x[0]!=='-').forEach(p=>{const t=abs(p),par=T.fs[dirname(t)];
+  if(T.fs[t])return err(`mkdir: no se puede crear el directorio '${p}': El archivo ya existe`);
+  if(!par)return err(`mkdir: no se puede crear el directorio '${p}': No existe el archivo o el directorio`);
+  if(!reach(t)||!can(par,2)||!can(par,1))return err(`mkdir: no se puede crear el directorio '${p}': Permiso denegado`);
+  T.fs[t]={t:'d',o:eu,g:gname(T.users[eu].gid),m:0o755}})},
+ touch(a){a.forEach(p=>{const t=abs(p),par=T.fs[dirname(t)];if(T.fs[t])return;
+  if(!par)return err(`touch: no se puede hacer touch '${p}': No existe el archivo o el directorio`);
+  if(!reach(t)||!can(par,2))return err(`touch: no se puede hacer touch '${p}': Permiso denegado`);
+  T.fs[t]={t:'f',o:eu,g:gname(T.users[eu].gid),m:0o644,c:''}})},
+ rm(a){const r=a.some(x=>/^-.*[rR]/.test(x));a.filter(x=>x[0]!=='-').forEach(p=>{const t=abs(p),n=T.fs[t];
+  if(!n)return err(`rm: no se puede borrar '${p}': No existe el archivo o el directorio`);
+  if(n.t==='d'&&!r)return err(`rm: no se puede borrar '${p}': Es un directorio`);
+  if(!reach(t)||!can(T.fs[dirname(t)],2))return err(`rm: no se puede borrar '${p}': Permiso denegado`);
+  Object.keys(T.fs).filter(k=>k===t||k.startsWith(t+'/')).forEach(k=>delete T.fs[k])})},
+ id([u]){u=u||eu;const x=T.users[u];if(!x)return err(`id: «${u}»: no existe ese usuario`);
+  const gs=[...gsOf(u)].map(g=>`${T.groups[g].gid}(${g})`);
+  out(`uid=${x.uid}(${u}) gid=${x.gid}(${gname(x.gid)}) grupos=${gs.join(',')}`)},
+ groups([u]){u=u||eu;if(!T.users[u])return err(`groups: «${u}»: no existe ese usuario`);out(u+' : '+[...gsOf(u)].join(' '))},
+ groupadd([g]){if(!needRoot('groupadd'))return;if(!g)return err('Uso: groupadd GRUPO');
+  if(T.groups[g])return err(`groupadd: el grupo «${g}» ya existe`);
+  T.groups[g]={gid:Math.max(999,...Object.values(T.groups).map(x=>x.gid).filter(x=>x<60000))+1,m:[]}},
+ useradd(a){if(!needRoot('useradd'))return;let m=false,sh='/bin/bash',gs=[],pg=null,name;
+  for(let i=0;i<a.length;i++){const x=a[i];
+   if(x==='-m'||x==='--create-home')m=true;else if(x==='-s')sh=a[++i];else if(x==='-G')gs=(a[++i]||'').split(',').filter(Boolean);
+   else if(x==='-g')pg=a[++i];else name=x}
+  if(!name)return err('Uso: useradd [-m] [-s shell] [-g grupo] [-G grupos] USUARIO');
+  if(T.users[name])return err(`useradd: el usuario «${name}» ya existe`);
+  for(const g of [...gs,...(pg?[pg]:[])])if(!T.groups[g])return err(`useradd: el grupo «${g}» no existe`);
+  const uid=nextId();let gid;
+  if(pg)gid=T.groups[pg].gid;else{if(T.groups[name])gid=T.groups[name].gid;else{gid=uid;while(Object.values(T.groups).some(x=>x.gid===gid))gid++;T.groups[name]={gid,m:[]}}}
+  T.users[name]={uid,gid,name:'',home:'/home/'+name,shell:sh};
+  gs.forEach(g=>T.groups[g].m.push(name));
+  if(m)T.fs['/home/'+name]={t:'d',o:name,g:gname(gid),m:0o750}},
+ userdel(a){if(!needRoot('userdel'))return;const r=a.includes('-r'),u=a.find(x=>x[0]!=='-');
+  if(!T.users[u])return err(`userdel: el usuario «${u}» no existe`);
+  const x=T.users[u];delete T.users[u];delete T.pw[u];
+  Object.values(T.groups).forEach(g=>g.m=g.m.filter(n=>n!==u));
+  if(T.groups[u]&&T.groups[u].gid===x.gid&&!Object.values(T.users).some(y=>y.gid===x.gid))delete T.groups[u];
+  if(r)Object.keys(T.fs).filter(k=>k===x.home||k.startsWith(x.home+'/')).forEach(k=>delete T.fs[k])},
+ usermod(a){if(!needRoot('usermod'))return;const u=a[a.length-1];if(!T.users[u])return err(`usermod: el usuario «${u}» no existe`);
+  const ap=a.includes('-a'),gi=a.findIndex(x=>/^-a?G$/.test(x)||x==='-aG');
+  if(a.includes('-L'))T.locked[u]=true;if(a.includes('-U'))delete T.locked[u];
+  const si=a.indexOf('-s');if(si>=0)T.users[u].shell=a[si+1];
+  if(gi>=0||a.includes('-aG')){const k=a.findIndex(x=>x==='-aG'||x==='-G'),gs=(a[k+1]||'').split(',').filter(Boolean);
+   for(const g of gs)if(!T.groups[g])return err(`usermod: el grupo «${g}» no existe`);
+   if(!(a.includes('-aG')||ap))Object.values(T.groups).forEach(g=>g.m=g.m.filter(n=>n!==u));
+   gs.forEach(g=>{if(!T.groups[g].m.includes(u))T.groups[g].m.push(u)})}},
+ passwd([u]){u=u||eu;if(!T.users[u])return err(`passwd: el usuario «${u}» no existe`);
+  if(u!==eu&&eu!=='root')return err('passwd: Debe ser superusuario para cambiar la contraseña de otros (usa sudo).');
+  outH(`Cambiando la contraseña de ${esc(u)}.`);
+  ask('Nueva contraseña: ',true,p1=>{if(!p1){err('passwd: contraseña no válida');return}
+   ask('Reescriba la nueva contraseña: ',true,p2=>{if(p1!==p2)err('Las contraseñas no coinciden.\npasswd: no se ha cambiado la contraseña');
+    else{T.pw[u]=p1;out('passwd: contraseña actualizada correctamente')}})})},
+ chmod(a){const R=a.some(x=>/^-.*R/.test(x)),args=a.filter(x=>x[0]!=='-'||/^-[rwxugo]/.test(x)&&!/^-R/.test(x)&&false);
+  const rest=a.filter(x=>!/^-R$/.test(x)),[mode,...fs]=rest;
+  if(!mode||!fs.length)return err('Uso: chmod MODO ARCHIVO...  (ej. chmod 640 notas.txt · chmod u+x run.sh)');
+  const apply=(k)=>{const n=T.fs[k];let m=n.m;
+   if(/^[0-7]{3,4}$/.test(mode))m=parseInt(mode,8);
+   else{for(const part of mode.split(',')){const r=part.match(/^([ugoa]*)([-+=])([rwx]*)$/);
+     if(!r)return err(`chmod: modo no válido: «${mode}»`);
+     const who=r[1]||'a',bits=[...r[3]].reduce((s,c)=>s|({r:4,w:2,x:1})[c],0);let mask=0;
+     for(const w of who==='a'?'ugo':who){const sh={u:6,g:3,o:0}[w];mask|=bits<<sh}
+     if(r[2]==='+')m|=mask;else if(r[2]==='-')m&=~mask;
+     else{let clr=0;for(const w of who==='a'?'ugo':who)clr|=7<<{u:6,g:3,o:0}[w];m=(m&~clr)|mask}}}
+   if(m===undefined)return;n.m=m};
+  fs.forEach(p=>{const t=abs(p),n=T.fs[t];
+   if(!n)return err(`chmod: no se puede acceder a '${p}': No existe el archivo o el directorio`);
+   if(eu!=='root'&&n.o!==eu)return err(`chmod: cambiando permisos de '${p}': Operación no permitida`);
+   Object.keys(T.fs).filter(k=>k===t||(R&&k.startsWith(t+'/'))).forEach(apply)})},
+ chown(a){if(eu!=='root')return err('chown: cambiando propietario: Operación no permitida (usa sudo).');
+  const R=a.includes('-R'),[spec,...fs]=a.filter(x=>x!=='-R');
+  if(!spec||!fs.length)return err('Uso: chown [-R] USUARIO[:GRUPO] ARCHIVO...');
+  const[o,g]=spec.split(':');
+  if(o&&!T.users[o])return err(`chown: usuario no válido: «${spec}»`);
+  if(g&&!T.groups[g])return err(`chown: grupo no válido: «${spec}»`);
+  fs.forEach(p=>{const t=abs(p);if(!T.fs[t])return err(`chown: no se puede acceder a '${p}': No existe el archivo o el directorio`);
+   Object.keys(T.fs).filter(k=>k===t||(R&&k.startsWith(t+'/'))).forEach(k=>{if(o)T.fs[k].o=o;if(g)T.fs[k].g=g})})},
+ su(a){const u=a.find(x=>x[0]!=='-')||'root';if(!T.users[u])return err(`su: el usuario ${u} no existe`);
+  const doSu=()=>{T.stack.push(T.user);T.user=u;T.cwd=a.includes('-')?home(u):T.cwd};
+  if(eu==='root')return doSu();
+  ask('Contraseña: ',true,p=>{if(T.pw[u]&&T.pw[u]===p&&!T.locked[u])doSu();else err('su: Fallo de autenticación')})},
+ exit(){if(T.stack.length){T.user=T.stack.pop();T.cwd=home(T.user)}else out('logout\n(estás en la sesión principal; cierra el laboratorio con Esc)')},
+ sudo(a,line){if(!a.length)return err('uso: sudo COMANDO');
+  if(eu!=='root'&&!gsOf(eu).has('sudo'))return err(`${eu} no está en el archivo sudoers. Se informará de este incidente.`);
+  if(a[0]==='su'){T.stack.push(T.user);T.user='root';if(a[1]==='-')T.cwd='/root';return}
+  const prev=eu;eu='root';try{exec1(a)}finally{eu=prev}},
+ reset(){resetLab()}
+};
+const WIN=['net','icacls','get-localuser','new-localuser','lusrmgr.msc','whoami.exe'];
+
+function exec1(tk){
+ const c=tk[0];
+ if(WIN.includes(c.toLowerCase()))return outH(`<span class="e">${esc(c)}: este laboratorio simula <b>Linux</b>. Ese comando es de Windows (consola/PowerShell).\nEquivalente en Linux: ver diapositiva "Linux y Windows, lado a lado".</span>`);
+ const f=C[c];if(!f)return err(`bash: ${c}: orden no encontrada. Escribe "help".`);
+ f(tk.slice(1));
+}
+function run(line){
+ const parts=line.split(/;|&&/).map(s=>s.trim()).filter(Boolean);
+ for(let seg of parts){
+  const tk=(seg.match(/"[^"]*"|'[^']*'|\S+/g)||[]).map(t=>/^(["']).*\1$/.test(t)?t.slice(1,-1):t);
+  if(!tk.length)continue;
+  eu=T.user;
+  const ri=tk.findIndex(t=>t==='>'||t==='>>');
+  if(tk[0]==='echo'&&ri>0&&tk[ri+1]){
+   const p=tk[ri+1],t=abs(p),par=T.fs[dirname(t)],txt=tk.slice(1,ri).join(' ')+'\n';
+   if(!par){err(`bash: ${p}: No existe el archivo o el directorio`);continue}
+   const n=T.fs[t];
+   if(n?!can(n,2):!can(par,2)){err(`bash: ${p}: Permiso denegado`);continue}
+   if(n)n.c=(tk[ri]==='>>'?n.c:'')+txt;else T.fs[t]={t:'f',o:eu,g:gname(T.users[eu].gid),m:0o644,c:txt};
+   continue}
+  exec1(tk);
+ }
+}
+/* ---------- referencia: para qué sirve cada comando ---------- */
+const REF_L=[
+ {n:'pwd',d:'Muestra en qué carpeta estás.',u:'pwd',e:'pwd',o:'/home/estudiante'},
+ {n:'ls',d:'Lista archivos y carpetas. -l da detalles y permisos, -a muestra los ocultos, -d describe la carpeta misma.',u:'ls [-l] [-a] [-d] [ruta]',e:'ls -l',o:'-rw-r--r--  1 estudiante estudiante  44 oct 15 08:00 notas.txt'},
+ {n:'cd',d:'Cambia de carpeta. cd solo te lleva a tu carpeta personal; cd .. sube un nivel.',u:'cd [ruta]',e:'cd proyecto',o:'(sin salida; el prompt cambia a ~/proyecto)'},
+ {n:'cat',d:'Muestra el contenido de un archivo. Necesita permiso de lectura (r).',u:'cat archivo',e:'cat notas.txt',o:'Apuntes de la clase de usuarios y permisos.'},
+ {n:'mkdir',d:'Crea una carpeta. Necesita permiso de escritura en la carpeta padre.',u:'mkdir nombre',e:'mkdir tareas',o:'(sin salida si todo salió bien)'},
+ {n:'touch',d:'Crea un archivo vacío (o actualiza su fecha).',u:'touch archivo',e:'touch lista.txt',o:'(sin salida)'},
+ {n:'cp',d:'Copia un archivo. La copia queda a tu nombre.',u:'cp origen destino',e:'cp notas.txt copia.txt',o:'(sin salida)'},
+ {n:'mv',d:'Mueve o renombra un archivo o carpeta.',u:'mv origen destino',e:'mv copia.txt viejo.txt',o:'(sin salida)'},
+ {n:'rm',d:'Borra archivos. -r borra carpetas con todo su contenido. No hay papelera.',u:'rm [-r] objetivo',e:'rm viejo.txt',o:'(sin salida)'},
+ {n:'echo',d:'Imprime texto. Con > lo escribe en un archivo (>> lo añade al final).',u:'echo texto [> archivo]',e:'echo hola > saludo.txt',o:'(escribe "hola" en saludo.txt)'},
+ {n:'grep',d:'Busca líneas que contengan un texto dentro de un archivo.',u:'grep texto archivo',e:'grep estudiante /etc/passwd',o:'estudiante:x:1000:1000:Estudiante TESI:/home/estudiante:/bin/bash'},
+ {n:'whoami',d:'Dice con qué cuenta estás trabajando ahora.',u:'whoami',e:'whoami',o:'estudiante'},
+ {n:'id',d:'Muestra el UID, el grupo principal y todos los grupos de una cuenta.',u:'id [usuario]',e:'id estudiante',o:'uid=1000(estudiante) gid=1000(estudiante) grupos=27(sudo),1000(estudiante)'},
+ {n:'groups',d:'Lista los grupos a los que pertenece una cuenta.',u:'groups [usuario]',e:'groups',o:'estudiante : sudo estudiante'},
+ {n:'sudo',d:'Ejecuta UN comando como administrador (root). Solo funciona si tu cuenta está en el grupo sudo.',u:'sudo comando',e:'sudo cat /etc/shadow',o:'(muestra los hashes de las contraseñas)'},
+ {n:'su',d:'Cambia de cuenta. su sin nombre pasa a root. exit regresa.',u:'su [usuario]',e:'su root',o:'Contraseña: (en este lab la de root es "root")'},
+ {n:'groupadd',d:'Crea un grupo nuevo. Requiere administrador.',u:'sudo groupadd grupo',e:'sudo groupadd contabilidad',o:'(sin salida; verifica con: grep contabilidad /etc/group)'},
+ {n:'useradd',d:'Crea una cuenta. -m crea su carpeta personal, -G la añade a grupos, -s fija el shell.',u:'sudo useradd -m [-G grupos] [-s shell] usuario',e:'sudo useradd -m -G contabilidad luis',o:'(sin salida; verifica con: id luis)'},
+ {n:'passwd',d:'Asigna o cambia la contraseña de una cuenta.',u:'sudo passwd usuario',e:'sudo passwd luis',o:'Nueva contraseña: ****\npasswd: contraseña actualizada correctamente'},
+ {n:'usermod',d:'Modifica una cuenta: -aG añade a un grupo sin quitar los otros, -L bloquea, -U desbloquea.',u:'sudo usermod -aG grupo usuario',e:'sudo usermod -L luis',o:'(sin salida; en /etc/shadow la contraseña empieza con !)'},
+ {n:'userdel',d:'Elimina una cuenta. -r borra también su carpeta personal.',u:'sudo userdel -r usuario',e:'sudo userdel -r luis',o:'(sin salida)'},
+ {n:'chmod',d:'Cambia permisos con números (640) o letras (u+x, o-r). -R aplica a todo el contenido.',u:'chmod modo archivo',e:'chmod 640 notas.txt',o:'(sin salida; verifica con ls -l → -rw-r-----)'},
+ {n:'chown',d:'Cambia el dueño y/o el grupo de un archivo. Requiere administrador.',u:'sudo chown usuario[:grupo] archivo',e:'sudo chown root:contabilidad /srv/contabilidad',o:'(sin salida)'},
+ {n:'history',d:'Lista los comandos que has escrito.',u:'history',e:'history',o:'   1  ls -l\n   2  cat notas.txt'},
+ {n:'man',d:'Muestra la ayuda de un comando (en este lab: qué hace, cómo se usa y un ejemplo).',u:'man comando',e:'man chmod',o:'(esta misma explicación)'},
+ {n:'clear',d:'Limpia la pantalla (Ctrl+L hace lo mismo).',u:'clear',e:'clear',o:'—'},
+];
+const REF_W=[
+ {n:'cd',d:'Cambia de carpeta. cd .. sube un nivel.',u:'cd ruta',e:'cd Documentos',o:'(el prompt cambia de ruta)'},
+ {n:'dir',d:'Lista el contenido de la carpeta (alias: ls, Get-ChildItem).',u:'dir [ruta]',e:'dir',o:'Mode  LastWriteTime  Length Name\n-a----  15/10/2026 08:00  44 notas.txt'},
+ {n:'type',d:'Muestra el contenido de un archivo (alias: cat, Get-Content). Requiere permiso de lectura.',u:'type archivo',e:'type notas.txt',o:'Apuntes de la clase.'},
+ {n:'mkdir',d:'Crea una carpeta. En C:\\ solo un administrador puede crearlas.',u:'mkdir ruta',e:'mkdir Tareas',o:'(crea la carpeta)'},
+ {n:'echo',d:'Imprime texto o lo escribe en un archivo con >.',u:'echo texto [> archivo]',e:'echo hola > hola.txt',o:'(sin salida)'},
+ {n:'del',d:'Borra un archivo (alias: rm, Remove-Item).',u:'del archivo',e:'del hola.txt',o:'(sin salida)'},
+ {n:'whoami',d:'Muestra la cuenta actual. /groups lista sus grupos.',u:'whoami [/groups]',e:'whoami',o:'tesi-pc\\estudiante'},
+ {n:'hostname',d:'Muestra el nombre del equipo.',u:'hostname',e:'hostname',o:'TESI-PC'},
+ {n:'net user',d:'Lista, crea, deshabilita o elimina cuentas locales. * pide la contraseña sin mostrarla.',u:'net user [nombre] [* | clave] [/add | /active:no | /delete]',e:'net user ana * /add',o:'Escriba una contraseña para el usuario:\nSe ha completado el comando correctamente.'},
+ {n:'net localgroup',d:'Lista grupos locales y administra sus miembros.',u:'net localgroup [grupo] [usuario] [/add | /delete]',e:'net localgroup Administradores ana /add',o:'Se ha completado el comando correctamente.'},
+ {n:'icacls',d:'Muestra o cambia los permisos NTFS (ACL). /grant da, /remove quita. Letras: F control total, M modificar, RX lectura y ejecución, R lectura, W escritura.',u:'icacls ruta [/grant usuario:M | /remove usuario]',e:'icacls notas.txt /grant ana:R',o:'Se procesaron correctamente 1 archivos; error al procesar 0 archivos'},
+ {n:'Get-LocalUser',d:'PowerShell: lista las cuentas locales y si están habilitadas.',u:'Get-LocalUser',e:'Get-LocalUser',o:'Name        Enabled Description\nestudiante  True    Estudiante TESI'},
+ {n:'New-LocalUser',d:'PowerShell: crea una cuenta local. Añádela a un grupo con Add-LocalGroupMember.',u:'New-LocalUser -Name nombre -NoPassword',e:'New-LocalUser -Name luis -NoPassword',o:'Name Enabled Description\nluis True'},
+ {n:'Disable-LocalUser',d:'PowerShell: deshabilita una cuenta (Enable-LocalUser la reactiva).',u:'Disable-LocalUser -Name nombre',e:'Disable-LocalUser -Name luis',o:'(sin salida)'},
+ {n:'Get-LocalGroup',d:'PowerShell: lista los grupos locales.',u:'Get-LocalGroup',e:'Get-LocalGroup',o:'Name\nAdministradores\nInvitados\nUsuarios'},
+ {n:'Get-LocalGroupMember',d:'PowerShell: lista los miembros de un grupo.',u:'Get-LocalGroupMember -Group nombre',e:'Get-LocalGroupMember -Group Administradores',o:'ObjectClass Name\nUser TESI-PC\\Administrador'},
+ {n:'Add-LocalGroupMember',d:'PowerShell: añade una cuenta a un grupo (rol).',u:'Add-LocalGroupMember -Group G -Member usuario',e:'Add-LocalGroupMember -Group Usuarios -Member luis',o:'(sin salida)'},
+ {n:'Start-Process',d:'Con -Verb RunAs abre una consola como administrador (lo que hace UAC). exit regresa a la consola normal.',u:'Start-Process powershell -Verb RunAs',e:'Start-Process powershell -Verb RunAs',o:'Control de Cuentas de Usuario → contraseña del Administrador ("admin" en este lab)'},
+ {n:'cls',d:'Limpia la pantalla.',u:'cls',e:'cls',o:'—'},
+];
+const REF=()=>mode==='win'?REF_W:REF_L;
+function showRef(r){outH(`<span class="c-x">${esc(r.n)}</span> — ${esc(r.d)}\n<span class="c-d">Uso:</span>      ${esc(r.u)}\n<span class="c-d">Ejemplo:</span>  ${esc(r.e)}\n<span class="c-d">Resultado:</span> ${esc(r.o).replace(/\n/g,'\n            ')}`)}
+function renderRef(){
+ const el=document.getElementById('rl');
+ el.innerHTML=REF().map((r,i)=>`<div class="rf" data-i="${i}"><b>${esc(r.n)}</b><div class="p">${esc(r.d.split('. ')[0].replace(/\.$/,''))}</div>
+  <div class="x"><div>${esc(r.d)}</div><div class="dim">Uso: ${esc(r.u)}</div><code data-c="${esc(r.e)}">${esc(r.e)}</code><pre>${esc(r.o)}</pre></div></div>`).join('');
+ el.querySelectorAll('.rf>b').forEach(b=>b.onclick=()=>b.parentNode.classList.toggle('open'));
+ el.querySelectorAll('code').forEach(c=>c.onclick=()=>{inp.value=c.dataset.c;inp.focus()});
+}
+function sideTab(t){
+ document.getElementById('pm').style.display=t==='m'?'':'none';
+ document.getElementById('rl').style.display=t==='r'?'':'none';
+ document.getElementById('sM').classList.toggle('on',t==='m');document.getElementById('sR').classList.toggle('on',t==='r');
+}
+
+/* ---------- comandos Linux adicionales ---------- */
+Object.assign(C,{
+ hostname(){out('tesi-lab')},
+ date(){out('jue 15 oct 2026 08:00:00 AST')},
+ uname(a){out(a.includes('-a')?'Linux tesi-lab 6.8.0 #1 SMP x86_64 GNU/Linux':'Linux')},
+ man([c]){if(!c)return err('¿Qué página del manual desea? Ej: man ls');
+  const r=REF_L.find(x=>x.n===c);if(!r)return err(`No hay entrada del manual para ${c}`);showRef(r)},
+ cp([s,d]){if(!s||!d)return err('Uso: cp ORIGEN DESTINO');const a=abs(s),n=T.fs[a];
+  if(!n)return err(`cp: no se puede efectuar 'stat' sobre '${s}': No existe el archivo o el directorio`);
+  if(n.t==='d')return err(`cp: se omite el directorio '${s}' (usa -r)`);
+  if(!reach(a)||!can(n,4))return err(`cp: no se puede abrir '${s}' para lectura: Permiso denegado`);
+  let t=abs(d);if(T.fs[t]&&T.fs[t].t==='d')t=t+'/'+a.split('/').pop();
+  const par=T.fs[dirname(t)];if(!par)return err(`cp: no se puede crear el fichero '${d}': No existe el archivo o el directorio`);
+  if(!reach(t)||!can(par,2))return err(`cp: no se puede crear el fichero '${d}': Permiso denegado`);
+  T.fs[t]={t:'f',o:eu,g:gname(T.users[eu].gid),m:n.m&0o755&~0o022|0,c:n.gen?gen(n.gen):n.c}},
+ mv([s,d]){if(!s||!d)return err('Uso: mv ORIGEN DESTINO');const a=abs(s),n=T.fs[a];
+  if(!n)return err(`mv: no se puede efectuar 'stat' sobre '${s}': No existe el archivo o el directorio`);
+  let t=abs(d);if(T.fs[t]&&T.fs[t].t==='d')t=t+'/'+a.split('/').pop();
+  const par=T.fs[dirname(t)];if(!par)return err(`mv: no se puede mover '${s}' a '${d}': No existe el archivo o el directorio`);
+  if(!can(par,2)||!can(T.fs[dirname(a)],2))return err(`mv: no se puede mover '${s}' a '${d}': Permiso denegado`);
+  Object.keys(T.fs).filter(k=>k===a||k.startsWith(a+'/')).forEach(k=>{T.fs[t+k.slice(a.length)]=T.fs[k];delete T.fs[k]})}
+});
+
+/* ---------- Windows (PowerShell) ---------- */
+const WH='C:\\Users\\estudiante';
+function resetW(){
+ W={cwd:WH,admin:false,elev:false,prompt:null,hist:[],won:0,
+  users:{Administrador:{on:true,pw:true,desc:'Cuenta integrada para la administración del equipo'},
+   DefaultAccount:{on:false,pw:false,desc:'Cuenta de sistema administrada por el sistema'},
+   Invitado:{on:false,pw:false,desc:'Cuenta integrada para el acceso como invitado'},
+   estudiante:{on:true,pw:true,desc:'Estudiante TESI'}},
+  groups:{Administradores:['Administrador'],Invitados:['Invitado'],Usuarios:['estudiante']},fs:{}};
+ const d=(p,acl)=>W.fs[p.toLowerCase()]={t:'d',n:p,acl},f=(p,c)=>W.fs[p.toLowerCase()]={t:'f',n:p,c};
+ const base={Administradores:'F',Usuarios:'RX'};
+ d('C:\\',{...base});d('C:\\Users',{...base});d('C:\\Windows',{...base});
+ d(WH,{estudiante:'F',Administradores:'F'});
+ f(WH+'\\notas.txt','Apuntes de la clase de usuarios y permisos.');
+ f(WH+'\\informe.txt','Informe trimestral. Confidencial.');
+ d(WH+'\\Documentos');f(WH+'\\Documentos\\tarea.txt','Tarea de la Unidad 3.');
+}
+const wdir=p=>{const r=p.replace(/\\[^\\]*$/,'');return r.length<=2?'C:\\':r};
+function wabs(p){
+ p=p.replace(/\//g,'\\').replace(/^["']|["']$/g,'');
+ if(p==='~')p=WH;
+ if(p.startsWith('\\'))p='C:'+p;
+ if(!/^[a-z]:/i.test(p))p=W.cwd+'\\'+p;
+ const m=p.match(/^([a-z]:)\\?(.*)$/i),o=[];
+ for(const s of m[2].split('\\')){if(!s||s==='.')continue;s==='..'?o.pop():o.push(s)}
+ return m[1].toUpperCase()+'\\'+o.join('\\');
+}
+const wn=p=>W.fs[p.toLowerCase()];
+const wkids=d=>Object.keys(W.fs).filter(k=>k.length>3&&wdir(W.fs[k].n).toLowerCase()===d.toLowerCase()&&k!==d.toLowerCase());
+function wacl(p){let q=p;while(true){const n=wn(q);if(n&&n.acl)return n.acl;if(q.length<=3)return{};q=wdir(q)}}
+function wr(p){ // permisos efectivos
+ if(W.admin)return{r:1,w:1,f:1};
+ const me=['estudiante','Todos',...Object.keys(W.groups).filter(g=>W.groups[g].includes('estudiante')&&g!=='Administradores')],a=wacl(p);
+ let r=0,w=0,f=0;
+ for(const k of Object.keys(a))if(me.some(x=>x.toLowerCase()===k.toLowerCase())){const v=a[k];
+  if('F,M,RX,R'.split(',').includes(v))r=1;if('F,M,W'.includes(v))w=1;if(v==='F')f=1}
+ return{r,w,f};
+}
+const wdeny=(c,p)=>err(`${c}: Acceso denegado a la ruta de acceso '${p}'.`);
+const needAdm=()=>{if(!W.admin){err('Error de sistema 5.\nAcceso denegado. Abre una consola como administrador:\n  Start-Process powershell -Verb RunAs');return false}return true};
+const wuser=n=>Object.keys(W.users).find(u=>u.toLowerCase()===String(n).toLowerCase());
+const wgrp=n=>Object.keys(W.groups).find(g=>g.toLowerCase()===String(n).toLowerCase());
+const par=(a,n)=>{const i=a.findIndex(x=>x.toLowerCase()==='-'+n.toLowerCase());return i>=0?a[i+1]:undefined};
+const OK='Se ha completado el comando correctamente.';
+const yes=b=>b?'Sí':'No';
+function pad(t,w){return String(t).padEnd(w)}
+function table(rows,cols){const w=cols.map((c,i)=>Math.max(c.length,...rows.map(r=>String(r[i]).length))+2);
+ outH(cols.map((c,i)=>pad(c,w[i])).join('')+'\n'+cols.map((c,i)=>pad('-'.repeat(c.length),w[i])).join('')+'\n'+rows.map(r=>r.map((x,i)=>pad(esc(x),w[i])).join('')).join('\n'))}
+function pwAsk(label,cb){ask(label,true,cb)}
+function addUser(name,pw,groups){
+ if(wuser(name))return err('La cuenta de usuario ya existe.');
+ W.users[name]={on:true,pw:!!pw,desc:''};groups.forEach(g=>W.groups[g].push(name));}
+const WC={
+ help(a){if(a[0]){const r=REF_W.find(x=>x.n.toLowerCase()===a.join(' ').toLowerCase()||x.n.toLowerCase()===a[0].toLowerCase());return r?showRef(r):err(`No se encontró ayuda para ${a.join(' ')}`)}
+  outH(`<span class="c-x">Comandos disponibles:</span>
+  <span class="c-x">Archivos</span>  dir · cd · type · mkdir · echo [> archivo] · del · cls
+  <span class="c-x">Cuentas</span>   whoami · net user · net localgroup · Get-LocalUser · New-LocalUser
+             Disable-LocalUser · Get-LocalGroup · Get-LocalGroupMember · Add-LocalGroupMember
+  <span class="c-x">Permisos</span>  icacls ruta [/grant usuario:M | /remove usuario]
+  <span class="c-x">Admin</span>     Start-Process powershell -Verb RunAs   (UAC; clave: admin) · exit
+  Escribe "help comando" para ver qué hace y un ejemplo. Alias: ls, cat, rm, clear.`)},
+ cls(){L.innerHTML=''},clear(){L.innerHTML=''},
+ hostname(){out('TESI-PC')},
+ whoami(a){if(a[0]==='/groups'){table([['Todos','Grupo conocido'],...Object.keys(W.groups).filter(g=>W.groups[g].includes('estudiante')).map(g=>['BUILTIN\\'+g,'Alias'])],['Nombre de grupo','Tipo']);
+   if(W.admin)out('\nNivel obligatorio alto (consola elevada)')}else out('tesi-pc\\estudiante')},
+ cd(a){const p=a.join(' ');if(!p)return out(W.cwd);const t=wabs(p),n=wn(t);
+  if(!n)return err(`cd : No se encuentra la ruta de acceso '${t}' porque no existe.`);
+  if(n.t!=='d')return err(`cd : El nombre de directorio no es válido.`);
+  if(!wr(t).r)return wdeny('cd',t);W.cwd=n.n},
+ dir(a){const t=a.length?wabs(a.filter(x=>x[0]!=='-').join(' ')||'.'):W.cwd,n=wn(t);
+  if(!n)return err(`Get-ChildItem : No se encuentra la ruta de acceso '${t}' porque no existe.`);
+  if(!wr(t).r)return wdeny('Get-ChildItem',t);
+  if(n.t==='f')return outH(`${esc(n.n)}`);
+  outH(`\n    Directorio: ${esc(n.n)}\n`);
+  const k=wkids(t).map(x=>W.fs[x]).sort((a,b)=>a.n.localeCompare(b.n));
+  table(k.map(x=>[x.t==='d'?'d-----':'-a----','15/10/2026 08:00',x.t==='d'?'':(x.c||'').length,x.n.split('\\').pop()]),['Mode','LastWriteTime','Length','Name'])},
+ type(a){const t=wabs(a.join(' ')),n=wn(t);
+  if(!a.length)return err('Uso: type archivo');
+  if(!n)return err(`Get-Content : No se encuentra la ruta de acceso '${t}' porque no existe.`);
+  if(n.t==='d')return err(`Get-Content : Acceso denegado a la ruta de acceso '${t}' (es una carpeta).`);
+  if(!wr(t).r)return wdeny('Get-Content',t);out(n.c||'')},
+ mkdir(a){const t=wabs(a.join(' '));if(!a.length)return err('Uso: mkdir ruta');
+  if(wn(t))return err(`New-Item : Ya existe un elemento con el nombre especificado '${t}'.`);
+  const pd=wdir(t);if(!wn(pd))return err(`New-Item : No se encuentra la ruta de acceso '${pd}'.`);
+  if(!wr(pd).w)return wdeny('New-Item',t);
+  W.fs[t.toLowerCase()]={t:'d',n:t,acl:{...wacl(pd)}};outH(`\n    Directorio: ${esc(pd)}\n\nMode   LastWriteTime      Name\nd----- 15/10/2026 08:00  ${esc(t.split('\\').pop())}`)},
+ del(a){const t=wabs(a.filter(x=>x[0]!=='-').join(' ')),n=wn(t);
+  if(!n)return err(`Remove-Item : No se encuentra la ruta de acceso '${t}' porque no existe.`);
+  if(!wr(wdir(t)).w&&!wr(t).w)return wdeny('Remove-Item',t);
+  Object.keys(W.fs).filter(k=>k===t.toLowerCase()||k.startsWith(t.toLowerCase()+'\\')).forEach(k=>delete W.fs[k])},
+ echo(a){out(a.join(' '))},
+ icacls(a){if(!a.length)return err('Uso: icacls archivo [/grant usuario:permiso] [/remove usuario]');
+  const t=wabs(a[0]),n=wn(t);
+  if(!n)return err(`${a[0]}: El sistema no puede encontrar el archivo especificado.\nSe procesaron correctamente 0 archivos; error al procesar 1 archivos`);
+  const gi=a.findIndex(x=>/^\/grant(:r)?$/i.test(x)),ri=a.findIndex(x=>/^\/remove/i.test(x));
+  if(gi<0&&ri<0){if(!wr(t).r)return err(`${t}: Acceso denegado.`);
+   const acl=wacl(t),ks=Object.keys(acl);
+   outH(`${esc(n.n)} ${ks.map((k,i)=>(i?'          '.padEnd(esc(n.n).length+1):'')+esc(k)+':('+acl[k]+')').join('\n')}\n\nSe procesaron correctamente 1 archivos; error al procesar 0 archivos`);return}
+  if(!W.admin&&!wr(t).f)return err(`${t}: Acceso denegado.\nSe procesaron correctamente 0 archivos; error al procesar 1 archivos`);
+  if(!n.acl)n.acl={...wacl(t)};
+  if(gi>=0){const[pn,pr]=(a[gi+1]||'').split(':');
+   const who=wuser(pn)||wgrp(pn)||(/^todos$/i.test(pn)?'Todos':null);
+   if(!who||!/^(F|M|RX|R|W)$/i.test(pr||''))return err(`No se pudo asignar. Usa: /grant usuario:F|M|RX|R|W (el usuario o grupo debe existir).`);
+   n.acl[who]=pr.toUpperCase()}
+  if(ri>=0){const who=Object.keys(n.acl).find(k=>k.toLowerCase()===String(a[ri+1]).toLowerCase());
+   if(!who)return err(`Ese usuario no tiene permisos en ${n.n}.`);delete n.acl[who]}
+  out('Se procesaron correctamente 1 archivos; error al procesar 0 archivos')},
+ net(a){const s=(a[0]||'').toLowerCase(),r=a.slice(1),low=r.map(x=>x.toLowerCase());
+  if(s==='user'){
+   if(!r.length){outH(`\nCuentas de usuario de \\\\TESI-PC\n${'-'.repeat(60)}\n${Object.keys(W.users).sort().join('   ')}\n${OK}`);return}
+   const nm=r[0],add=low.includes('/add'),del=low.includes('/delete'),act=low.find(x=>x.startsWith('/active:'));
+   if(add){if(!needAdm())return;if(wuser(nm))return err('La cuenta de usuario ya existe.');
+    const pw=r[1]&&r[1]!=='*'&&r[1][0]!=='/'?r[1]:null;
+    const fin=p=>{addUser(nm,p,['Usuarios']);out(OK)};
+    if(pw)return fin(pw);if(r[1]==='*')return pwAsk('Escriba una contraseña para el usuario: ',p=>pwAsk('Vuelva a escribir la contraseña: ',q=>p===q?fin(p):err('Las contraseñas no coinciden.')));
+    return fin(null)}
+   const u=wuser(nm);if(!u)return err('No se pudo encontrar el nombre de usuario.');
+   if(del){if(!needAdm())return;delete W.users[u];Object.values(W.groups).forEach((m,i,arr)=>{const k=m.indexOf(u);if(k>=0)m.splice(k,1)});return out(OK)}
+   if(act){if(!needAdm())return;W.users[u].on=act.endsWith('yes');return out(OK)}
+   const gs=Object.keys(W.groups).filter(g=>W.groups[g].includes(u));
+   outH(`Nombre de usuario            ${esc(u)}\nNombre completo\nComentario                   ${esc(W.users[u].desc)}\nCuenta activa                ${yes(W.users[u].on)}\nContraseña requerida         ${yes(W.users[u].pw)}\nMiembros del grupo local     ${gs.map(g=>'*'+g).join(' ')}\n${OK}`);return}
+  if(s==='localgroup'){
+   if(!r.length){outH(`\nAlias de \\\\TESI-PC\n${'-'.repeat(60)}\n${Object.keys(W.groups).sort().map(g=>'*'+g).join('\n')}\n${OK}`);return}
+   const g=wgrp(r[0]);
+   if(low.includes('/add')&&r.length===2){if(!needAdm())return;if(g)return err('El nombre de grupo especificado ya existe.');W.groups[r[0]]=[];return out(OK)}
+   if(!g)return err('No se pudo encontrar el nombre de grupo.');
+   if(r.length>=3&&(low.includes('/add')||low.includes('/delete'))){if(!needAdm())return;const u=wuser(r[1]);if(!u)return err('No se pudo encontrar el nombre de usuario.');
+    if(low.includes('/add')){if(W.groups[g].includes(u))return err('La cuenta ya es miembro del grupo.');W.groups[g].push(u)}else W.groups[g]=W.groups[g].filter(x=>x!==u);return out(OK)}
+   if(low.includes('/delete')){if(!needAdm())return;delete W.groups[g];return out(OK)}
+   outH(`Nombre de alias   ${esc(g)}\n${'-'.repeat(60)}\n${W.groups[g].map(esc).join('\n')}\n${OK}`);return}
+  err('Uso: net user [...] | net localgroup [...]')},
+ 'get-localuser'(){table(Object.keys(W.users).sort().map(u=>[u,W.users[u].on?'True':'False',W.users[u].desc]),['Name','Enabled','Description'])},
+ 'new-localuser'(a){if(!needAdm())return;const n=par(a,'Name')||a.find(x=>x[0]!=='-');if(!n)return err('New-LocalUser : Falta -Name.');
+  if(wuser(n))return err(`New-LocalUser : La cuenta de usuario ya existe.`);
+  addUser(n,!a.some(x=>/^-nopassword$/i.test(x)),[]);table([[n,'True','']],['Name','Enabled','Description'])},
+ 'remove-localuser'(a){if(!needAdm())return;const u=wuser(par(a,'Name')||a[0]);if(!u)return err('Remove-LocalUser : Usuario no encontrado.');
+  delete W.users[u];Object.values(W.groups).forEach((m,i)=>{const k=m.indexOf(u);if(k>=0)m.splice(k,1)})},
+ 'disable-localuser'(a){if(!needAdm())return;const u=wuser(par(a,'Name')||a[0]);if(!u)return err('Disable-LocalUser : Usuario no encontrado.');W.users[u].on=false},
+ 'enable-localuser'(a){if(!needAdm())return;const u=wuser(par(a,'Name')||a[0]);if(!u)return err('Enable-LocalUser : Usuario no encontrado.');W.users[u].on=true},
+ 'get-localgroup'(){table(Object.keys(W.groups).sort().map(g=>[g]),['Name'])},
+ 'new-localgroup'(a){if(!needAdm())return;const n=par(a,'Name')||a[0];if(!n)return err('New-LocalGroup : Falta -Name.');if(wgrp(n))return err('New-LocalGroup : El grupo ya existe.');W.groups[n]=[];table([[n]],['Name'])},
+ 'get-localgroupmember'(a){const g=wgrp(par(a,'Group')||a[0]);if(!g)return err('Get-LocalGroupMember : Grupo no encontrado.');
+  table(W.groups[g].map(m=>['User','TESI-PC\\'+m]),['ObjectClass','Name'])},
+ 'add-localgroupmember'(a){if(!needAdm())return;const g=wgrp(par(a,'Group')),u=wuser(par(a,'Member'));
+  if(!g)return err('Add-LocalGroupMember : Grupo no encontrado.');if(!u)return err('Add-LocalGroupMember : Usuario no encontrado.');
+  if(W.groups[g].includes(u))return err('Add-LocalGroupMember : El usuario ya es miembro del grupo.');W.groups[g].push(u)},
+ 'remove-localgroupmember'(a){if(!needAdm())return;const g=wgrp(par(a,'Group')),u=wuser(par(a,'Member'));
+  if(!g||!u)return err('Remove-LocalGroupMember : Grupo o usuario no encontrado.');W.groups[g]=W.groups[g].filter(x=>x!==u)},
+ 'start-process'(a){if(!a.some(x=>/^-verb$/i.test(x))||!a.some(x=>/^runas$/i.test(x)))return err('Start-Process : usa -Verb RunAs para abrir una consola como administrador.');
+  if(W.admin)return out('Ya estás en una consola elevada.');
+  outH('<span class="c-d">Control de Cuentas de Usuario (UAC)</span>\n¿Desea permitir que esta aplicación realice cambios en su dispositivo?');
+  pwAsk('Contraseña de Administrador: ',p=>{if(p==='admin'){W.admin=true;W.elev=true;out('Consola elevada. Ahora puedes administrar cuentas y permisos.')}else err('La contraseña no es correcta.')})},
+ exit(){if(W.admin){W.admin=false;out('Consola elevada cerrada. Vuelves a la consola normal.')}else out('Esta es la consola principal; cierra el laboratorio con Esc.')},
+ history(){W.hist.forEach((h,i)=>out(String(i+1).padStart(4)+'  '+h))},
+ 'lusrmgr.msc'(){out('Se abriría la consola gráfica "Usuarios y grupos locales" (solo en Windows Pro/Enterprise). En este lab usa net user o Get-LocalUser.')}
+};
+Object.assign(WC,{ls:WC.dir,'get-childitem':WC.dir,cat:WC.type,'get-content':WC.type,rm:WC.del,'remove-item':WC.del,md:WC.mkdir,chdir:WC.cd,
+ 'get-help':WC.help,'get-history':WC.history,'write-output':WC.echo,'set-location':WC.cd,'start':WC['start-process']});
+function runW(line){
+ for(const seg of line.split(/;|&&/).map(s=>s.trim()).filter(Boolean)){
+  const tk=(seg.match(/"[^"]*"|'[^']*'|\S+/g)||[]).map(t=>/^(["']).*\1$/.test(t)?t.slice(1,-1):t);
+  if(!tk.length)continue;
+  const ri=tk.findIndex(t=>t==='>'||t==='>>');
+  if(tk[0].toLowerCase()==='echo'&&ri>0&&tk[ri+1]){
+   const t=wabs(tk[ri+1]),pd=wdir(t),txt=tk.slice(1,ri).join(' '),n=wn(t);
+   if(!wn(pd)){err(`No se encuentra la ruta '${pd}'.`);continue}
+   if(!(n?wr(t).w||wr(pd).w:wr(pd).w)){wdeny('Out-File',t);continue}
+   if(n)n.c=(tk[ri]==='>>'?(n.c||'')+'\n':'')+txt;else W.fs[t.toLowerCase()]={t:'f',n:t,c:txt};continue}
+  const c=tk[0].toLowerCase();let a=tk.slice(1);
+  if(c==='net'||c==='net.exe'){WC.net(a);continue}
+  if(c==='help'&&a.length){WC.help(a);continue}
+  const f=WC[c];
+  if(['net','sudo','chmod','chown','useradd','grep','pwd','id','su'].includes(c)&&!f)return err(`${tk[0]} : El término '${tk[0]}' no se reconoce como nombre de un cmdlet de Windows. (Ese es un comando de Linux; cambia a la pestaña LINUX.)`);
+  if(!f){err(`${tk[0]} : El término '${tk[0]}' no se reconoce como nombre de un cmdlet, función o programa. Escribe "help".`);continue}
+  f(a);
+ }
+}
+
+/* ---------- prompt, entrada y modos ---------- */
+const S=()=>mode==='win'?W:T;
+function ask(label,hidden,fn){S().prompt={label,hidden,fn};inp.type=hidden?'password':'text';render()}
+function render(){
+ if(mode==='win'){prEl.innerHTML=W.prompt?esc(W.prompt.label):`<span class="pr">PS ${W.admin?'<span class="e">(Admin)</span> ':''}<span class="c-d">${esc(W.cwd)}</span>&gt; </span>`}
+ else{const u=T.user,r=u==='root',p=T.cwd===home(u)?'~':T.cwd.replace(home(u)+'/','~/');
+  prEl.innerHTML=T.prompt?esc(T.prompt.label):`<span class="pr"><i>${esc(u)}@tesi-lab</i>:<span class="c-d">${esc(p)}</span>${r?'#':'$'} </span>`}
+ tout.scrollTop=tout.scrollHeight;
+}
+function submit(v){
+ const s=S();
+ if(s.prompt){const pr=s.prompt;s.prompt=null;inp.type='text';outH(esc(pr.label)+(pr.hidden?'':esc(v)));pr.fn(v);render();checkMissions();return}
+ outH(prEl.innerHTML+esc(v));
+ if(v.trim()){s.hist.push(v.trim());hi=s.hist.length;mode==='win'?runW(v):run(v)}
+ render();checkMissions();
+}
+inp.addEventListener('keydown',e=>{
+ const s=S();
+ if(e.key==='Enter'){const v=inp.value;inp.value='';submit(v)}
+ else if(e.key==='ArrowUp'&&!s.prompt){if(hi>0)inp.value=s.hist[--hi];e.preventDefault()}
+ else if(e.key==='ArrowDown'&&!s.prompt){hi=Math.min(s.hist.length,hi+1);inp.value=s.hist[hi]||'';e.preventDefault()}
+ else if(e.key==='l'&&e.ctrlKey){L.innerHTML='';e.preventDefault()}
+ else if(e.key==='Tab'&&!s.prompt){e.preventDefault();
+  const v=inp.value,m=v.match(/(\S*)$/)[1],first=!/\s/.test(v.trim())&&!/\s$/.test(v);let opts;
+  if(mode==='win'){opts=first?Object.keys(WC).filter(c=>c.startsWith(m.toLowerCase())):wkids(W.cwd).map(k=>W.fs[k].n.split('\\').pop()).filter(n=>n.toLowerCase().startsWith(m.toLowerCase()))}
+  else if(first)opts=Object.keys(C).filter(c=>c.startsWith(m));
+  else{const i=m.lastIndexOf('/'),dir=i>=0?m.slice(0,i+1):'',d=abs(dir||'.'),base=m.slice(i+1);
+   opts=kids(d).filter(k=>k.split('/').pop().startsWith(base)).map(k=>dir+k.split('/').pop()+(T.fs[k].t==='d'?'/':''))}
+  if(opts.length===1)inp.value=v.slice(0,v.length-m.length)+opts[0]+(first?' ':'');
+  else if(opts.length>1)outH(opts.map(esc).join('  '))}
+});
+tout.addEventListener('click',()=>{if(!getSelection().toString())inp.focus()});
+
+/* ---------- misiones ---------- */
+const MSL=[
+ ['Crear el grupo contabilidad',()=>!!T.groups.contabilidad,'sudo groupadd …'],
+ ['Crear a luis dentro de contabilidad',()=>T.users.luis&&T.groups.contabilidad&&T.groups.contabilidad.m.includes('luis')&&!!T.fs['/home/luis'],'sudo useradd -m -G …'],
+ ['Asignar contraseña a luis',()=>T.users.luis&&!!T.pw.luis,'sudo passwd luis'],
+ ['Crear /srv/contabilidad',()=>T.fs['/srv/contabilidad']&&T.fs['/srv/contabilidad'].t==='d','sudo mkdir …'],
+ ['Cambiar dueño a root:contabilidad',()=>{const n=T.fs['/srv/contabilidad'];return n&&n.o==='root'&&n.g==='contabilidad'},'sudo chown root:contabilidad …'],
+ ['Aplicar chmod 770',()=>{const n=T.fs['/srv/contabilidad'];return n&&(n.m&0o777)===0o770},'sudo chmod 770 …'],
+ ['Verificar con ls -ld e id',()=>T.hist.some(h=>/ls\s+-ld\s+\/srv\/contabilidad/.test(h))&&T.hist.some(h=>/(^|;|&&)\s*id\s+luis/.test(h)),'ls -ld … ; id luis'],
+ ['notas.txt en modo 640',()=>{const n=T.fs['/home/estudiante/notas.txt'];return n&&(n.m&0o777)===0o640},'chmod 640 notas.txt'],
+ ['respaldo.sh ejecutable por su dueño',()=>{const n=T.fs['/home/estudiante/respaldo.sh'];return n&&(n.m&0o100)},'chmod u+x respaldo.sh'],
+ ['informe.txt sin lectura para otros',()=>{const n=T.fs['/home/estudiante/informe.txt'];return n&&!(n.m&4)},'chmod o-r informe.txt'],
+ ['Bloquear una cuenta (usermod -L)',()=>Object.keys(T.locked).length>0,'sudo usermod -L luis'],
+];
+const MSW=[
+ ['Abrir una consola como administrador',()=>W.elev,'Start-Process powershell -Verb RunAs'],
+ ['Crear la cuenta ana',()=>!!wuser('ana'),'net user ana * /add'],
+ ['Crear el grupo Contabilidad',()=>!!wgrp('Contabilidad'),'net localgroup Contabilidad /add'],
+ ['Añadir ana al grupo Contabilidad',()=>wgrp('Contabilidad')&&W.groups[wgrp('Contabilidad')].includes('ana'),'net localgroup Contabilidad ana /add'],
+ ['Crear la carpeta C:\\Contabilidad',()=>{const n=wn('C:\\contabilidad');return n&&n.t==='d'},'mkdir C:\\Contabilidad'],
+ ['Dar Modificar al grupo Contabilidad',()=>{const n=wn('C:\\contabilidad');return n&&n.acl&&n.acl.Contabilidad==='M'},'icacls C:\\Contabilidad /grant Contabilidad:M'],
+ ['Quitar los permisos del grupo Usuarios',()=>{const n=wn('C:\\contabilidad');return n&&n.acl&&!('Usuarios' in n.acl)&&n.acl.Contabilidad==='M'},'icacls C:\\Contabilidad /remove Usuarios'],
+ ['Verificar con icacls y Get-LocalUser',()=>W.hist.some(h=>/icacls\s+C:\\Contabilidad\s*$/i.test(h))&&W.hist.some(h=>/get-localuser|net user\s*$/i.test(h)),'icacls C:\\Contabilidad'],
+ ['Deshabilitar la cuenta ana',()=>W.users.ana&&W.users.ana.on===false,'net user ana /active:no'],
+];
+function checkMissions(){
+ const M=mode==='win'?MSW:MSL;let ok=0;
+ document.getElementById('ml').innerHTML=M.map(([t,fn,h])=>{let d=false;try{d=!!fn()}catch(e){}
+  if(d)ok++;return `<div class="ms ${d?'ok':''}"><i>${d?'[✔]':'[ ]'}</i><span>${esc(t)}${d?'':`<br><span class="dim" style="font-size:13px">${esc(h)}</span>`}</span></div>`}).join('');
+ document.querySelector('#pbar div').style.width=(ok/M.length*100)+'%';
+ const s=S();if(ok===M.length&&!s.won){s.won=1;outH('<span class="c-x">★ ¡Todas las misiones completadas! Buen trabajo, administrador.</span>')}
+}
+function banner(){
+ L.innerHTML='';
+ if(mode==='win')outH(`<span class="c-x">TESI-LAB  ·  Simulador de Windows PowerShell  ·  Usuarios y Permisos</span>
+Estás como <b>estudiante</b> (cuenta estándar, sin privilegios). Escribe <span class="c-x">help</span> para ver los comandos.
+Para administrar cuentas necesitas elevar la consola (UAC): <span class="c-x">Start-Process powershell -Verb RunAs</span>  · clave: admin
+Es una simulación: nada afecta a tu equipo.\n`);
+ else outH(`<span class="c-x">TESI-LAB  ·  Simulador de Linux  ·  Usuarios y Permisos</span>
+Estás como <b>estudiante</b> (miembro del grupo sudo). Escribe <span class="c-x">help</span> o <span class="c-x">man comando</span>.
+Completa las misiones del panel derecho. Es una simulación: nada afecta a tu equipo.\n`);
+}
+function setMode(m){
+ mode=m;L=m==='win'?logW:log;
+ lab.classList.toggle('win',m==='win');
+ log.style.display=m==='win'?'none':'';logW.style.display=m==='win'?'':'none';
+ document.getElementById('tabL').classList.toggle('on',m!=='win');document.getElementById('tabW').classList.toggle('on',m==='win');
+ inp.type='text';hi=S().hist.length;renderRef();render();checkMissions();inp.focus();
+}
+function resetLab(){
+ if(mode==='win'){resetW()}else{reset()}
+ banner();hi=0;render();checkMissions();inp.focus()}
+const isWin=c=>/^(net\s|icacls|get-local|new-local|start-process|disable-local|add-local|lusrmgr)/i.test(c);
+function openLab(cmd){lab.classList.add('show');
+ if(typeof cmd==='string'){setMode(isWin(cmd)?'win':mode);inp.value=cmd}
+ setTimeout(()=>inp.focus(),50)}
+function closeLab(){lab.classList.remove('show')}
+Object.assign(C,{reset(){resetLab()}});
+document.querySelectorAll('.cmd').forEach(c=>{const go=()=>openLab(c.textContent.replace(/^\$\s*/,''));c.tabIndex=0;c.setAttribute('role','button');c.setAttribute('aria-label','Probar en el laboratorio: '+c.textContent);c.addEventListener('click',go);c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();go()}})});
+const logW=document.getElementById('logW');
+reset();resetW();setMode('win');banner();setMode('lin');banner();
+show(parseInt(location.hash.slice(1))-1||0);
+</script>
+</body>
+</html>
