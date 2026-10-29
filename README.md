@@ -3,8 +3,12 @@
 Presentación web interactiva (Unidad 3, inciso B) con tema de terminal hacker y un laboratorio
 con dos terminales simuladas: Linux (bash) y Windows (PowerShell).
 
-- Sitio estático: un solo archivo, `index.html`. Sin build ni dependencias.
-- Navegación: `←` `→`, `T` abre el laboratorio, `I` info extra, `F` pantalla completa.
+- Sitio estático, sin build ni dependencias. Cada presentación es un solo archivo:
+  - `index.html`: Unidad 3, inciso B · Gestión de Usuarios y Permisos.
+  - `unidad3C.html`: Unidad 3, inciso C · Seguridad en Sistemas Operativos, con el Laboratorio 3C
+    (Seguridad de Windows, PowerShell y una terminal de práctica de ufw).
+- Navegación del inciso B: `←` `→`, `T` abre el laboratorio, `I` info extra, `F` pantalla completa.
+- Navegación del inciso C: `←` `→`, `I` índice, `F` pantalla completa.
 
 ## Ejecutar
 
